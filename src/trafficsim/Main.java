@@ -5,6 +5,7 @@ import trafficsim.engine.VehicleSpawner;
 import trafficsim.factory.NetworkLoader;
 import trafficsim.model.road.RoadNetwork;
 import trafficsim.model.vehicle.Vehicle;
+import trafficsim.strategy.signal.SignalControlMode;
 import trafficsim.view.SimulationDisplay;
 
 import javax.swing.JFrame;
@@ -27,8 +28,13 @@ public class Main {
     public static void main(String[] args) {
         String networkPath = null;
         Long seed = null;
+        SignalControlMode signalMode = SignalControlMode.ADAPTIVE;
         for (String a : args) {
             if (a.startsWith("--seed=")) seed = Long.parseLong(a.substring("--seed=".length()));
+            else if (a.startsWith("--signals=")) {
+                signalMode = SignalControlMode.valueOf(
+                        a.substring("--signals=".length()).trim().toUpperCase());
+            }
             else if (!a.startsWith("--")) networkPath = a;
         }
         long runSeed = seed != null ? seed : new SecureRandom().nextLong();
@@ -45,6 +51,7 @@ public class Main {
         for (int i = 0; i < 6; i++) spawner.spawnOne(network);
         SimulationEngine engine = new SimulationEngine(
                 network, 30, spawner, runSeed);
+        engine.setSignalControlMode(signalMode);
 
         SwingUtilities.invokeLater(() -> {
             SimulationDisplay display = new SimulationDisplay(engine);

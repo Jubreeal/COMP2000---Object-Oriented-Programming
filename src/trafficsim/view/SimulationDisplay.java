@@ -3,6 +3,7 @@ package trafficsim.view;
 import trafficsim.engine.SimulationEngine;
 import trafficsim.engine.SimulationObserver;
 import trafficsim.engine.Statistics;
+import trafficsim.engine.TrafficSummary;
 import trafficsim.model.road.BusStop;
 import trafficsim.model.road.Intersection;
 import trafficsim.model.road.Lane;
@@ -263,25 +264,28 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
     }
 
     private void drawDashboard(Graphics2D graphics, List<Vehicle> vehicles) {
+        TrafficSummary summary = Statistics.summarize(vehicles);
         graphics.setColor(new Color(12, 18, 23, 215));
-        graphics.fillRoundRect(18, 16, 324, 92, 14, 14);
+        graphics.fillRoundRect(18, 16, 374, 111, 14, 14);
         graphics.setColor(Color.WHITE);
         graphics.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         graphics.drawString("CITY FLOW", 32, 40);
         graphics.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         String state = engine.isPaused() ? "PAUSED" : "RUNNING";
         graphics.drawString(String.format("%s  tick %,d  vehicles %d", state,
-                engine.getTickCount(), vehicles.size()), 32, 59);
-        graphics.drawString(String.format("avg speed %.2f  stopped %d",
-                Statistics.averageSpeed(vehicles), Statistics.stoppedCount(vehicles)), 32, 76);
+                engine.getTickCount(), summary.vehicleCount()), 32, 59);
+        graphics.drawString(String.format("avg speed %.2f  stopped %d (%.0f%%)",
+                summary.averageSpeed(), summary.stoppedCount(), summary.stoppedPercentage()), 32, 76);
+        graphics.drawString(String.format("signals %-8s  congestion %s",
+                engine.getSignalStrategyName(), summary.congestionLevel()), 32, 93);
         graphics.drawString(String.format("run seed %016X",
-                engine.getRunSeed()), 32, 94);
+                engine.getRunSeed()), 32, 110);
 
         graphics.setColor(new Color(12, 18, 23, 185));
-        graphics.fillRoundRect(18, getHeight() - 45, 170, 28, 12, 12);
+        graphics.fillRoundRect(18, getHeight() - 45, 305, 28, 12, 12);
         graphics.setColor(new Color(225, 232, 235));
         graphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-        graphics.drawString("SPACE pause/resume", 31, getHeight() - 26);
+        graphics.drawString("SPACE pause/resume     T switch signal strategy", 31, getHeight() - 26);
 
     }
 
@@ -289,10 +293,18 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
         InputMap inputMap = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap actionMap = getActionMap();
         inputMap.put(KeyStroke.getKeyStroke("SPACE"), "toggle-running");
+        inputMap.put(KeyStroke.getKeyStroke('T'), "toggle-signals");
         actionMap.put("toggle-running", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent event) {
                 engine.setPaused(!engine.isPaused());
+                repaint();
+            }
+        });
+        actionMap.put("toggle-signals", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                engine.toggleSignalControlMode();
                 repaint();
             }
         });

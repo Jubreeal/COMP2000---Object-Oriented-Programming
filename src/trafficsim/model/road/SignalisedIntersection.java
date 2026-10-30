@@ -5,6 +5,12 @@ import trafficsim.util.Axis;
 import trafficsim.util.LightPhase;
 import trafficsim.model.light.TrafficLight;
 import trafficsim.model.vehicle.Vehicle;
+import trafficsim.strategy.signal.QueueResponsiveSignalStrategy;
+import trafficsim.strategy.signal.SignalDecision;
+import trafficsim.strategy.signal.SignalSnapshot;
+import trafficsim.strategy.signal.SignalTimingStrategy;
+
+import java.util.Objects;
 
 /**
  * 4-way stop-and-go intersection controlled by a {@link TrafficLight}, with
@@ -15,10 +21,22 @@ public final class SignalisedIntersection extends Intersection {
 
     private final TrafficLight light;
     private int extensionsThisPhase = 0;
+    private SignalTimingStrategy timingStrategy;
 
     public SignalisedIntersection(int x, int y, TrafficLight light) {
+        this(x, y, light, new QueueResponsiveSignalStrategy(
+                SimConstants.ADAPTIVE_DECISION_WINDOW,
+                SimConstants.ADAPTIVE_QUEUE_HIGH,
+                SimConstants.ADAPTIVE_EXTEND_TICKS,
+                SimConstants.ADAPTIVE_MAX_EXTENSIONS));
+    }
+
+    public SignalisedIntersection(
+            int x, int y, TrafficLight light, SignalTimingStrategy timingStrategy) {
         super(x, y);
-        this.light = light;
+        this.light = Objects.requireNonNull(light, "Traffic light cannot be null");
+        this.timingStrategy = Objects.requireNonNull(
+                timingStrategy, "Signal timing strategy cannot be null");
     }
 
     @Override
@@ -32,6 +50,16 @@ public final class SignalisedIntersection extends Intersection {
         return light;
     }
 
+    public void setTimingStrategy(SignalTimingStrategy timingStrategy) {
+        this.timingStrategy = Objects.requireNonNull(
+                timingStrategy, "Signal timing strategy cannot be null");
+        extensionsThisPhase = 0;
+    }
+
+    public SignalTimingStrategy getTimingStrategy() {
+        return timingStrategy;
+    }
+
     /**
      * If we're near the end of a green phase and there's a busy queue on that
      * axis, reset the timer to buy a few extra ticks. Capped by
@@ -43,24 +71,29 @@ public final class SignalisedIntersection extends Intersection {
             extensionsThisPhase = 0;
             return;
         }
-        // Green is extended only in its final four ticks, not for the whole phase.
-        int remaining = light.getGreenDuration() - light.getTimer();
-        if (remaining > 4) return; // only extend near end of phase
-        if (extensionsThisPhase >= SimConstants.ADAPTIVE_MAX_EXTENSIONS) return;
-        int queued = queuedOnGreenAxis();
-        if (queued < SimConstants.ADAPTIVE_QUEUE_HIGH) return;
-        // Rewind the timer by the extension length so the state machine sees "still fresh green".
-        light.extendCurrentPhase(SimConstants.ADAPTIVE_EXTEND_TICKS);
-        extensionsThisPhase++;
+        int remaining = Math.max(0, light.getGreenDuration() - light.getTimer());
+        Axis green = light.getGreenAxis();
+        SignalSnapshot snapshot = new SignalSnapshot(
+                light.getPhase(),
+                green,
+                remaining,
+                queuedOnAxis(green),
+                queuedOnAxis(green.other()),
+                extensionsThisPhase);
+        SignalDecision decision = timingStrategy.decide(snapshot);
+        if (decision.extensionTicks() > 0) {
+            // Rewind the timer so the State machine remains green for the policy's extension.
+            light.extendCurrentPhase(decision.extensionTicks());
+            extensionsThisPhase++;
+        }
     }
 
-    /** Count vehicles queued on connected roads whose direction matches the green axis. */
-    private int queuedOnGreenAxis() {
-        Axis green = light.getGreenAxis();
+    /** Count vehicles queued on connected roads whose direction matches an axis. */
+    private int queuedOnAxis(Axis axis) {
         int count = 0;
         for (Road road : connectedRoads) {
             for (Lane lane : road.getLanes()) {
-                if (Axis.of(lane.getDirection()) != green) continue;
+                if (Axis.of(lane.getDirection()) != axis) continue;
                 for (Vehicle v : lane.getVehicles()) {
                     if (v.getSpeed() > 0.5) continue;
                     // Count only stopped vehicles close enough to be waiting for this junction.

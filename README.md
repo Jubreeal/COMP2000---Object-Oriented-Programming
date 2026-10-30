@@ -58,8 +58,9 @@ java -cp src/out trafficsim.Main
 Optional args:
 - `<network-file>` — path to a network definition (defaults to `networks/grid.txt`)
 - `--seed=<long>` — deterministic RNG seed for spawning and driver slowdown
+- `--signals=adaptive|fixed` — choose the initial signal-control strategy
 
-Requires Java 17 or newer. The GUI shows the original 1100×700 top-down city view. Press `space` to pause or resume the simulation.
+Requires Java 17 or newer. The GUI shows the original 1100×700 top-down city view. Press `space` to pause or resume the simulation and `T` to compare fixed-time and queue-responsive signal strategies during the same run.
 The dashboard displays the generated run seed. Launching normally creates a new pattern; passing `--seed=<long>` deliberately repeats one.
 
 ## Design Patterns
@@ -71,8 +72,9 @@ The dashboard displays the generated run seed. Launching normally creates a new 
 | Exceptions | `SimulationException` → `InvalidNetworkException` | Week 7 |
 | Observer | `SimulationObserver` / `SimulationDisplay` | Week 13 |
 | State | `LightState` / `RedState` / `GreenState` / `YellowState` | Week 13 |
-| Factory | `NetworkLoader` (file + built-in default) | Week 13 |
-| Streams / lambdas | `Statistics`, network parsing, vehicle cleanup | Week 13 |
+| Strategy | `SignalTimingStrategy` → fixed-time / queue-responsive policies | Week 13 |
+| Simple Factory | `NetworkLoader` (file + built-in default) | Week 13 |
+| Streams / lambdas | custom statistics collector, network parsing, policy application, vehicle cleanup | Week 13 |
 | Threading | Background simulation loop with lock-protected complete updates | Week 13 |
 | Sealed hierarchies | `Vehicle`, `Intersection` | Modern Java |
 | Records | `SensorReading` | Modern Java |
@@ -85,7 +87,8 @@ The dashboard displays the generated run seed. Launching normally creates a new 
 - **Bus service** — buses dwell briefly at Central Station, Museum, or University when the stop serves their lane, then continue
 - **Random traffic** — production runs randomise spawn timing, boundary lane, vehicle type, driver profile, cargo weight, and slowdown behaviour; `--seed` makes it reproducible
 - **Smooth updates** — the simulation advances atomically at 30 updates per second so rendering never sees a half-updated world
-- **Adaptive signal timing** — extend green if queue exceeds threshold
+- **Signal-control experiment** — switch live between fixed-time and queue-responsive policies; adaptive signals balance competing queues and cap extensions to prevent starvation
+- **One-pass traffic analytics** — a custom collector computes speed, stopped percentage, congestion level, and vehicle-type counts together
 - **Australian lane placement** — vehicles spawn and travel on the left side of the road
 
 ## Communication
@@ -95,3 +98,24 @@ Discord — respond when possible, notify the team if you can't make a deadline.
 ## AI Use Acknowledgement
 
 Generative AI tools were used to help review, explain, debug, and refine parts of the code and documentation. The submitted work was checked by the student, who remains responsible for understanding and explaining it.
+
+## Standard-JRE self-tests
+
+From the repository root on Bash / Git Bash:
+
+```
+javac -d out $(find src tests -name "*.java")
+java -cp out trafficsim.Assignment2SelfTest
+```
+
+The tests exercise the fixed and adaptive strategy decisions, starvation protection,
+the extension cap, and the custom traffic-statistics collector.
+
+To compare both signal strategies headlessly with the same seed and tick count:
+
+```
+java -cp out trafficsim.SignalStrategyExperiment 20261030 6000
+```
+
+The first argument is the seed and the second is the number of ticks. The runner
+reports mean speed and mean stopped percentage after a warm-up period.

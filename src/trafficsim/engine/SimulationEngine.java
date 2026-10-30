@@ -6,6 +6,8 @@ import trafficsim.model.road.Lane;
 import trafficsim.model.road.Road;
 import trafficsim.model.road.RoadNetwork;
 import trafficsim.model.vehicle.Vehicle;
+import trafficsim.strategy.signal.SignalControlMode;
+import trafficsim.strategy.signal.SignalTimingStrategy;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -26,6 +28,8 @@ public class SimulationEngine {
     private final int tickRate;
     private volatile boolean running;
     private volatile boolean paused;
+    private volatile SignalControlMode signalControlMode = SignalControlMode.ADAPTIVE;
+    private volatile SignalTimingStrategy signalTimingStrategy;
     private long tickCount;
 
     public SimulationEngine(
@@ -34,6 +38,8 @@ public class SimulationEngine {
         this.tickRate = tickRate;
         this.spawner = spawner;
         this.runSeed = runSeed;
+        this.signalTimingStrategy = signalControlMode.createStrategy();
+        this.network.setSignalTimingStrategy(signalTimingStrategy);
     }
 
     public void addObserver(SimulationObserver observer) { observers.add(observer); }
@@ -113,9 +119,30 @@ public class SimulationEngine {
         running = false;
     }
 
+    /**
+     * Swap the Strategy used by every signal. The same network lock used by a
+     * simulation tick makes the change atomic with respect to movement and painting.
+     */
+    public void setSignalControlMode(SignalControlMode mode) {
+        if (mode == null) throw new IllegalArgumentException("Signal control mode is required");
+        synchronized (network) {
+            SignalTimingStrategy strategy = mode.createStrategy();
+            network.setSignalTimingStrategy(strategy);
+            signalTimingStrategy = strategy;
+            signalControlMode = mode;
+        }
+        notifyObservers();
+    }
+
+    public void toggleSignalControlMode() {
+        setSignalControlMode(signalControlMode.other());
+    }
+
     public void setPaused(boolean paused) { this.paused = paused; }
     public boolean isPaused() { return paused; }
     public long getTickCount() { return tickCount; }
     public long getRunSeed() { return runSeed; }
+    public SignalControlMode getSignalControlMode() { return signalControlMode; }
+    public String getSignalStrategyName() { return signalTimingStrategy.displayName(); }
     public RoadNetwork getNetwork() { return network; }
 }

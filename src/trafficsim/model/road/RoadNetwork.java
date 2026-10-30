@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import trafficsim.strategy.signal.SignalTimingStrategy;
+
 public class RoadNetwork {
     private final List<Road> roads = new ArrayList<>();
     private final List<Intersection> intersections =
@@ -54,6 +56,15 @@ public class RoadNetwork {
 
     public List<BusStop> getBusStops() {
         return Collections.unmodifiableList(busStops);
+    }
+
+    /** Apply one immutable policy object to every signalised intersection. */
+    public void setSignalTimingStrategy(SignalTimingStrategy timingStrategy) {
+        Objects.requireNonNull(timingStrategy, "Signal timing strategy cannot be null");
+        intersections.stream()
+                .filter(SignalisedIntersection.class::isInstance)
+                .map(SignalisedIntersection.class::cast)
+                .forEach(intersection -> intersection.setTimingStrategy(timingStrategy));
     }
 
     /**
