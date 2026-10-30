@@ -14,12 +14,14 @@ import trafficsim.model.vehicle.Bus;
 import trafficsim.model.vehicle.EmergencyVehicle;
 import trafficsim.model.vehicle.Truck;
 import trafficsim.model.vehicle.Vehicle;
+import trafficsim.strategy.SignalTimingMode;
 import trafficsim.util.Direction;
 import trafficsim.util.LightPhase;
 
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
 import javax.swing.JPanel;
@@ -31,6 +33,7 @@ import java.awt.Graphics;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -57,6 +60,7 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
 
     private final SimulationEngine engine;
     private final Map<Vehicle, Color> vehicleColours = new IdentityHashMap<>();
+    private final JButton signalTimingButton = new JButton();
 
     public SimulationDisplay(SimulationEngine engine) {
         if (engine == null) {
@@ -65,6 +69,7 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
         this.engine = engine;
         setBackground(GRASS);
         setFocusable(true);
+        installSignalTimingButton();
         installKeyBindings();
     }
 
@@ -296,7 +301,7 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
     private void drawDashboard(Graphics2D graphics, CongestionReport report) {
         TrafficStatistics statistics = report.networkStatistics();
         graphics.setColor(new Color(12, 18, 23, 215));
-        graphics.fillRoundRect(18, 16, 500, 136, 14, 14);
+        graphics.fillRoundRect(18, 16, 500, 155, 14, 14);
         graphics.setColor(Color.WHITE);
         graphics.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         graphics.drawString("CITY FLOW", 32, 40);
@@ -320,8 +325,10 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
                         road.x1(), road.y1(), road.x2(), road.y2()))
                 .orElse("no roads in network");
         graphics.drawString(worstLocation, 32, 116);
+        graphics.drawString(String.format("signal timing %s  [T to switch]",
+                engine.getSignalTimingMode().displayName()), 32, 135);
         graphics.drawString(String.format("run seed %016X",
-                engine.getRunSeed()), 32, 135);
+                engine.getRunSeed()), 32, 154);
 
         graphics.setColor(new Color(12, 18, 23, 185));
         graphics.fillRoundRect(18, getHeight() - 45, 170, 28, 12, 12);
@@ -362,6 +369,39 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
                 repaint();
             }
         });
+        inputMap.put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_T, 0),
+                "toggle-signal-timing");
+        actionMap.put("toggle-signal-timing", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                toggleSignalTimingMode();
+            }
+        });
+    }
+
+    private void installSignalTimingButton() {
+        setLayout(null);
+        signalTimingButton.setName("signal-timing-control");
+        signalTimingButton.setBounds(795, 20, 275, 36);
+        signalTimingButton.setFocusable(false);
+        signalTimingButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        signalTimingButton.setToolTipText(
+                "Switch between fixed-time and adaptive traffic signals");
+        signalTimingButton.addActionListener(event -> toggleSignalTimingMode());
+        updateSignalTimingButton();
+        add(signalTimingButton);
+    }
+
+    private void toggleSignalTimingMode() {
+        engine.toggleSignalTimingMode();
+        updateSignalTimingButton();
+        repaint();
+    }
+
+    private void updateSignalTimingButton() {
+        SignalTimingMode mode = engine.getSignalTimingMode();
+        signalTimingButton.setText("SIGNAL TIMING: " + mode.displayName());
     }
 
     private List<Vehicle> allVehicles() {

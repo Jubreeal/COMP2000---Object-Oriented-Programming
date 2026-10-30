@@ -8,7 +8,9 @@ import trafficsim.model.road.Intersection;
 import trafficsim.model.road.Lane;
 import trafficsim.model.road.Road;
 import trafficsim.model.road.RoadNetwork;
+import trafficsim.model.road.SignalisedIntersection;
 import trafficsim.model.vehicle.Vehicle;
+import trafficsim.strategy.SignalTimingMode;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -31,14 +33,30 @@ public class SimulationEngine {
     private volatile boolean running;
     private volatile boolean paused;
     private volatile CongestionReport latestCongestionReport;
+    private volatile SignalTimingMode signalTimingMode;
     private long tickCount;
 
     public SimulationEngine(
             RoadNetwork network, int tickRate, VehicleSpawner spawner, long runSeed) {
+        this(
+                network,
+                tickRate,
+                spawner,
+                runSeed,
+                SignalTimingMode.ADAPTIVE_QUEUE_PRESSURE);
+    }
+
+    public SimulationEngine(
+            RoadNetwork network,
+            int tickRate,
+            VehicleSpawner spawner,
+            long runSeed,
+            SignalTimingMode initialSignalTimingMode) {
         this.network = network;
         this.tickRate = tickRate;
         this.spawner = spawner;
         this.runSeed = runSeed;
+        setSignalTimingMode(initialSignalTimingMode);
         this.latestCongestionReport = congestionAnalyser.analyse(
                 NetworkSnapshot.capture(network, 0));
     }
@@ -130,4 +148,30 @@ public class SimulationEngine {
     public long getRunSeed() { return runSeed; }
     public RoadNetwork getNetwork() { return network; }
     public CongestionReport getLatestCongestionReport() { return latestCongestionReport; }
+
+    /** Apply one timing policy consistently to every signalised intersection. */
+    public void setSignalTimingMode(SignalTimingMode mode) {
+        if (mode == null) {
+            throw new IllegalArgumentException("Signal timing mode cannot be null.");
+        }
+        synchronized (network) {
+            signalTimingMode = mode;
+            network.getIntersections().stream()
+                    .filter(SignalisedIntersection.class::isInstance)
+                    .map(SignalisedIntersection.class::cast)
+                    .forEach(intersection -> intersection.setTimingStrategy(
+                            mode.strategy()));
+        }
+    }
+
+    public SignalTimingMode toggleSignalTimingMode() {
+        synchronized (network) {
+            setSignalTimingMode(signalTimingMode.next());
+            return signalTimingMode;
+        }
+    }
+
+    public SignalTimingMode getSignalTimingMode() {
+        return signalTimingMode;
+    }
 }
