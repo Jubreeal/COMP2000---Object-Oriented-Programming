@@ -1,8 +1,11 @@
 package trafficsim.view;
 
+import trafficsim.analysis.CongestionLevel;
+import trafficsim.analysis.CongestionReport;
+import trafficsim.analysis.RoadCongestion;
+import trafficsim.analysis.TrafficStatistics;
 import trafficsim.engine.SimulationEngine;
 import trafficsim.engine.SimulationObserver;
-import trafficsim.engine.Statistics;
 import trafficsim.model.road.BusStop;
 import trafficsim.model.road.Intersection;
 import trafficsim.model.road.Lane;
@@ -32,6 +35,7 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @SuppressWarnings("serial") // Swing panels are not persisted by this application.
 public final class SimulationDisplay extends JPanel implements SimulationObserver {
@@ -41,6 +45,9 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
     private static final Color ROAD = new Color(49, 54, 61);
     private static final Color ROAD_EDGE = new Color(25, 29, 34);
     private static final Color LANE_MARKING = new Color(230, 215, 160);
+    private static final Color LOW_CONGESTION = new Color(47, 112, 76);
+    private static final Color MODERATE_CONGESTION = new Color(174, 119, 45);
+    private static final Color HIGH_CONGESTION = new Color(165, 62, 62);
     private static final Color[] CAR_COLOURS = {
             new Color(235, 91, 91), new Color(79, 184, 235),
             new Color(117, 213, 132), new Color(195, 119, 232),
@@ -69,14 +76,15 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
         graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
         synchronized (engine.getNetwork()) {
+            CongestionReport report = engine.getLatestCongestionReport();
             List<Vehicle> vehicles = allVehicles();
             vehicleColours.keySet().retainAll(vehicles);
             drawCityBlocks(graphics);
-            drawRoads(graphics);
+            drawRoads(graphics, report);
             drawBusStops(graphics);
             drawIntersections(graphics);
             drawVehicles(graphics, vehicles);
-            drawDashboard(graphics, vehicles);
+            drawDashboard(graphics, report);
         }
         graphics.dispose();
     }
@@ -108,13 +116,15 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
         }
     }
 
-    private void drawRoads(Graphics2D graphics) {
+    private void drawRoads(Graphics2D graphics, CongestionReport report) {
         Stroke originalStroke = graphics.getStroke();
         for (Road road : engine.getNetwork().getRoads()) {
             graphics.setColor(ROAD_EDGE);
             graphics.setStroke(new BasicStroke(38, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
             graphics.drawLine(road.getX1(), road.getY1(), road.getX2(), road.getY2());
-            graphics.setColor(ROAD);
+            graphics.setColor(roadColour(congestionFor(road, report)
+                    .map(RoadCongestion::level)
+                    .orElse(null)));
             graphics.setStroke(new BasicStroke(32, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
             graphics.drawLine(road.getX1(), road.getY1(), road.getX2(), road.getY2());
             graphics.setColor(LANE_MARKING);
@@ -123,6 +133,27 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
             graphics.drawLine(road.getX1(), road.getY1(), road.getX2(), road.getY2());
         }
         graphics.setStroke(originalStroke);
+    }
+
+    private Optional<RoadCongestion> congestionFor(
+            Road road, CongestionReport report) {
+        return report.roads().stream()
+                .filter(result -> result.x1() == road.getX1()
+                        && result.y1() == road.getY1()
+                        && result.x2() == road.getX2()
+                        && result.y2() == road.getY2())
+                .findFirst();
+    }
+
+    static Color roadColour(CongestionLevel level) {
+        if (level == null) {
+            return ROAD;
+        }
+        return switch (level) {
+            case LOW -> LOW_CONGESTION;
+            case MODERATE -> MODERATE_CONGESTION;
+            case HIGH -> HIGH_CONGESTION;
+        };
     }
 
     private void drawIntersections(Graphics2D graphics) {
@@ -262,20 +293,35 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
         return colour;
     }
 
-    private void drawDashboard(Graphics2D graphics, List<Vehicle> vehicles) {
+    private void drawDashboard(Graphics2D graphics, CongestionReport report) {
+        TrafficStatistics statistics = report.networkStatistics();
         graphics.setColor(new Color(12, 18, 23, 215));
-        graphics.fillRoundRect(18, 16, 324, 92, 14, 14);
+        graphics.fillRoundRect(18, 16, 500, 136, 14, 14);
         graphics.setColor(Color.WHITE);
         graphics.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
         graphics.drawString("CITY FLOW", 32, 40);
         graphics.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         String state = engine.isPaused() ? "PAUSED" : "RUNNING";
         graphics.drawString(String.format("%s  tick %,d  vehicles %d", state,
-                engine.getTickCount(), vehicles.size()), 32, 59);
-        graphics.drawString(String.format("avg speed %.2f  stopped %d",
-                Statistics.averageSpeed(vehicles), Statistics.stoppedCount(vehicles)), 32, 76);
+                report.tick(), statistics.vehicleCount()), 32, 59);
+        graphics.drawString(String.format("avg speed %.2f  queued %d (%.0f%%)",
+                statistics.averageSpeed(),
+                statistics.queuedVehicleCount(),
+                statistics.queuedFraction() * 100.0), 32, 78);
+
+        String worstSummary = report.mostCongestedRoad()
+                .map(road -> String.format("worst road %s  score %.1f",
+                        road.level(), road.score()))
+                .orElse("worst road unavailable");
+        graphics.drawString(worstSummary, 32, 97);
+
+        String worstLocation = report.mostCongestedRoad()
+                .map(road -> String.format("(%d,%d) to (%d,%d)",
+                        road.x1(), road.y1(), road.x2(), road.y2()))
+                .orElse("no roads in network");
+        graphics.drawString(worstLocation, 32, 116);
         graphics.drawString(String.format("run seed %016X",
-                engine.getRunSeed()), 32, 94);
+                engine.getRunSeed()), 32, 135);
 
         graphics.setColor(new Color(12, 18, 23, 185));
         graphics.fillRoundRect(18, getHeight() - 45, 170, 28, 12, 12);
@@ -283,6 +329,26 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
         graphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
         graphics.drawString("SPACE pause/resume", 31, getHeight() - 26);
 
+        drawHeatmapLegend(graphics);
+
+    }
+
+    private void drawHeatmapLegend(Graphics2D graphics) {
+        int y = getHeight() - 45;
+        graphics.setColor(new Color(12, 18, 23, 185));
+        graphics.fillRoundRect(200, y, 330, 28, 12, 12);
+        graphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+        drawLegendItem(graphics, 214, y + 9, LOW_CONGESTION, "low");
+        drawLegendItem(graphics, 294, y + 9, MODERATE_CONGESTION, "moderate");
+        drawLegendItem(graphics, 410, y + 9, HIGH_CONGESTION, "high");
+    }
+
+    private void drawLegendItem(
+            Graphics2D graphics, int x, int y, Color colour, String label) {
+        graphics.setColor(colour);
+        graphics.fillRoundRect(x, y, 12, 12, 3, 3);
+        graphics.setColor(new Color(225, 232, 235));
+        graphics.drawString(label, x + 18, y + 11);
     }
 
     private void installKeyBindings() {
