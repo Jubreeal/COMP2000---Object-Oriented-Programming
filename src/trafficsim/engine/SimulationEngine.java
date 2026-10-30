@@ -1,6 +1,9 @@
 package trafficsim.engine;
 
 import trafficsim.SimConstants;
+import trafficsim.analysis.CongestionAnalyser;
+import trafficsim.analysis.CongestionReport;
+import trafficsim.analysis.NetworkSnapshot;
 import trafficsim.model.road.Intersection;
 import trafficsim.model.road.Lane;
 import trafficsim.model.road.Road;
@@ -22,10 +25,12 @@ public class SimulationEngine {
     private final List<SimulationObserver> observers = new ArrayList<>();
     private final VehicleSpawner spawner;
     private final long runSeed;
+    private final CongestionAnalyser congestionAnalyser = new CongestionAnalyser();
 
     private final int tickRate;
     private volatile boolean running;
     private volatile boolean paused;
+    private volatile CongestionReport latestCongestionReport;
     private long tickCount;
 
     public SimulationEngine(
@@ -34,6 +39,8 @@ public class SimulationEngine {
         this.tickRate = tickRate;
         this.spawner = spawner;
         this.runSeed = runSeed;
+        this.latestCongestionReport = congestionAnalyser.analyse(
+                NetworkSnapshot.capture(network, 0));
     }
 
     public void addObserver(SimulationObserver observer) { observers.add(observer); }
@@ -45,6 +52,7 @@ public class SimulationEngine {
     }
 
     private void doStep() {
+        NetworkSnapshot snapshot;
         // Painting uses the same lock, so the UI never sees a half-finished tick.
         synchronized (network) {
             tickCount++;
@@ -54,7 +62,10 @@ public class SimulationEngine {
             moveLaneVehicles(readings);
             spawner.despawnOffMap(network);
             if (vehicles.size() < SimConstants.SPAWN_CAP) spawner.tick(network);
+            snapshot = NetworkSnapshot.capture(network, tickCount);
         }
+        // Analysis reads only immutable copies and does not hold the network lock.
+        latestCongestionReport = congestionAnalyser.analyse(snapshot);
         notifyObservers();
     }
 
@@ -118,4 +129,5 @@ public class SimulationEngine {
     public long getTickCount() { return tickCount; }
     public long getRunSeed() { return runSeed; }
     public RoadNetwork getNetwork() { return network; }
+    public CongestionReport getLatestCongestionReport() { return latestCongestionReport; }
 }
