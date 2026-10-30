@@ -26,8 +26,11 @@ public final class SimConstants {
     public static final double SPAWN_ENTRY_CLEARANCE = 36.0; // bus length + normal gap
 
     // -- adaptive signals ----------------------------------------------------
+    public static final double QUEUED_SPEED_THRESHOLD = 0.5;
     public static final int    ADAPTIVE_QUEUE_HIGH     = 4;   // vehicles queued to trigger extension
+    public static final int    ADAPTIVE_EXTENSION_WINDOW = 4; // final green ticks eligible for extension
     public static final int    ADAPTIVE_EXTEND_TICKS   = 12;  // extra green ticks per extension
     public static final int    ADAPTIVE_MAX_EXTENSIONS = 3;
+    public static final double ADAPTIVE_QUEUE_RADIUS   = 180.0;
 
 }

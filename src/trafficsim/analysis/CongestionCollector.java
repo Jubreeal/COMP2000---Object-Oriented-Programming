@@ -1,5 +1,7 @@
 package trafficsim.analysis;
 
+import trafficsim.SimConstants;
+
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
@@ -18,8 +20,6 @@ public final class CongestionCollector implements Collector<
         VehicleSnapshot,
         CongestionCollector.Accumulator,
         TrafficStatistics> {
-
-    public static final double QUEUED_SPEED_THRESHOLD = 0.5;
 
     public static Collector<VehicleSnapshot, ?, TrafficStatistics> toTrafficStatistics() {
         return new CongestionCollector();
@@ -62,7 +62,7 @@ public final class CongestionCollector implements Collector<
         private void add(VehicleSnapshot vehicle) {
             vehicleCount++;
             totalSpeed += vehicle.speed();
-            if (vehicle.speed() <= QUEUED_SPEED_THRESHOLD) {
+            if (vehicle.speed() <= SimConstants.QUEUED_SPEED_THRESHOLD) {
                 queuedVehicleCount++;
             }
         }

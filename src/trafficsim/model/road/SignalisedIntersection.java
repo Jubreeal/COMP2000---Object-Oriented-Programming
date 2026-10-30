@@ -1,10 +1,14 @@
 package trafficsim.model.road;
 
 import trafficsim.SimConstants;
+import trafficsim.model.light.TrafficLight;
+import trafficsim.strategy.SignalTimingContext;
+import trafficsim.strategy.SignalTimingStrategies;
+import trafficsim.strategy.SignalTimingStrategy;
 import trafficsim.util.Axis;
 import trafficsim.util.LightPhase;
-import trafficsim.model.light.TrafficLight;
-import trafficsim.model.vehicle.Vehicle;
+
+import java.util.Objects;
 
 /**
  * 4-way stop-and-go intersection controlled by a {@link TrafficLight}, with
@@ -14,11 +18,27 @@ import trafficsim.model.vehicle.Vehicle;
 public final class SignalisedIntersection extends Intersection {
 
     private final TrafficLight light;
+    private SignalTimingStrategy timingStrategy;
     private int extensionsThisPhase = 0;
 
     public SignalisedIntersection(int x, int y, TrafficLight light) {
+        this(
+                x,
+                y,
+                light,
+                SignalTimingStrategies.adaptiveQueuePressure());
+    }
+
+    public SignalisedIntersection(
+            int x,
+            int y,
+            TrafficLight light,
+            SignalTimingStrategy timingStrategy) {
         super(x, y);
-        this.light = light;
+        this.light = Objects.requireNonNull(light, "Traffic light cannot be null.");
+        this.timingStrategy = Objects.requireNonNull(
+                timingStrategy,
+                "Signal timing strategy cannot be null.");
     }
 
     @Override
@@ -43,32 +63,40 @@ public final class SignalisedIntersection extends Intersection {
             extensionsThisPhase = 0;
             return;
         }
-        // Green is extended only in its final four ticks, not for the whole phase.
         int remaining = light.getGreenDuration() - light.getTimer();
-        if (remaining > 4) return; // only extend near end of phase
-        if (extensionsThisPhase >= SimConstants.ADAPTIVE_MAX_EXTENSIONS) return;
-        int queued = queuedOnGreenAxis();
-        if (queued < SimConstants.ADAPTIVE_QUEUE_HIGH) return;
+        Axis greenAxis = light.getGreenAxis();
+        SignalTimingContext context = new SignalTimingContext(
+                light.getPhase(),
+                remaining,
+                extensionsThisPhase,
+                queuedOnAxis(greenAxis),
+                queuedOnAxis(greenAxis.other()));
+
+        if (!timingStrategy.shouldExtendGreen(context)) {
+            return;
+        }
         // Rewind the timer by the extension length so the state machine sees "still fresh green".
         light.extendCurrentPhase(SimConstants.ADAPTIVE_EXTEND_TICKS);
         extensionsThisPhase++;
     }
 
-    /** Count vehicles queued on connected roads whose direction matches the green axis. */
-    private int queuedOnGreenAxis() {
-        Axis green = light.getGreenAxis();
-        int count = 0;
-        for (Road road : connectedRoads) {
-            for (Lane lane : road.getLanes()) {
-                if (Axis.of(lane.getDirection()) != green) continue;
-                for (Vehicle v : lane.getVehicles()) {
-                    if (v.getSpeed() > 0.5) continue;
-                    // Count only stopped vehicles close enough to be waiting for this junction.
-                    double dx = v.getX() - x, dy = v.getY() - y;
-                    if (Math.hypot(dx, dy) < 180) count++; // scaled for enlarged map
-                }
-            }
-        }
-        return count;
+    /** Count nearby queued vehicles travelling on the supplied road axis. */
+    private int queuedOnAxis(Axis axis) {
+        return (int) connectedRoads.stream()
+                .flatMap(road -> road.getLanes().stream())
+                .filter(lane -> Axis.of(lane.getDirection()) == axis)
+                .flatMap(lane -> lane.getVehicles().stream())
+                .filter(vehicle -> vehicle.getSpeed()
+                        <= SimConstants.QUEUED_SPEED_THRESHOLD)
+                .filter(vehicle -> Math.hypot(
+                        vehicle.getX() - x,
+                        vehicle.getY() - y) < SimConstants.ADAPTIVE_QUEUE_RADIUS)
+                .count();
+    }
+
+    public void setTimingStrategy(SignalTimingStrategy timingStrategy) {
+        this.timingStrategy = Objects.requireNonNull(
+                timingStrategy,
+                "Signal timing strategy cannot be null.");
     }
 }
