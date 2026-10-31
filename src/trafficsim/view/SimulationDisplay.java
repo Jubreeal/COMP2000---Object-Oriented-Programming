@@ -358,18 +358,28 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
         graphics.setColor(new Color(12, 18, 23, 185));
         graphics.fillRoundRect(200, y, 330, 28, 12, 12);
         graphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        drawLegendItem(graphics, 214, y + 9, ROAD, "road");
-        drawLegendItem(graphics, 274, y + 9, LOW_CONGESTION, "low");
-        drawLegendItem(graphics, 334, y + 9, MODERATE_CONGESTION, "moderate");
-        drawLegendItem(graphics, 446, y + 9, HIGH_CONGESTION, "high");
+        int itemX = 214;
+        itemX = drawLegendItem(graphics, itemX, y + 9, ROAD, "road");
+        itemX = drawLegendItem(graphics, itemX, y + 9, LOW_CONGESTION, "low");
+        itemX = drawLegendItem(
+                graphics,
+                itemX,
+                y + 9,
+                MODERATE_CONGESTION,
+                "moderate");
+        drawLegendItem(graphics, itemX, y + 9, HIGH_CONGESTION, "high");
     }
 
-    private void drawLegendItem(
+    private int drawLegendItem(
             Graphics2D graphics, int x, int y, Color colour, String label) {
+        final int gapBetweenItems = 24;
         graphics.setColor(colour);
         graphics.fillRoundRect(x, y, 12, 12, 3, 3);
         graphics.setColor(new Color(225, 232, 235));
         graphics.drawString(label, x + 18, y + 11);
+        return x + 18
+                + graphics.getFontMetrics().stringWidth(label)
+                + gapBetweenItems;
     }
 
     private void installKeyBindings() {
