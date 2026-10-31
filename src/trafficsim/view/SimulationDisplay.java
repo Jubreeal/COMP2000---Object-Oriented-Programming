@@ -1,8 +1,8 @@
 package trafficsim.view;
 
+import trafficsim.analysis.ApproachCongestion;
 import trafficsim.analysis.CongestionLevel;
 import trafficsim.analysis.CongestionReport;
-import trafficsim.analysis.RoadCongestion;
 import trafficsim.analysis.TrafficStatistics;
 import trafficsim.engine.SimulationEngine;
 import trafficsim.engine.SimulationObserver;
@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @SuppressWarnings("serial") // Swing panels are not persisted by this application.
 public final class SimulationDisplay extends JPanel implements SimulationObserver {
@@ -127,27 +126,35 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
             graphics.setColor(ROAD_EDGE);
             graphics.setStroke(new BasicStroke(38, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
             graphics.drawLine(road.getX1(), road.getY1(), road.getX2(), road.getY2());
-            graphics.setColor(roadColour(congestionFor(road, report)
-                    .map(RoadCongestion::level)
-                    .orElse(null)));
+            graphics.setColor(ROAD);
             graphics.setStroke(new BasicStroke(32, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
             graphics.drawLine(road.getX1(), road.getY1(), road.getX2(), road.getY2());
+        }
+
+        graphics.setStroke(new BasicStroke(
+                14,
+                BasicStroke.CAP_BUTT,
+                BasicStroke.JOIN_MITER));
+        for (ApproachCongestion approach : report.approaches()) {
+            graphics.setColor(roadColour(approach.level()));
+            int laneOffsetX = approach.direction().leftX()
+                    * Lane.LANE_HALF_WIDTH;
+            int laneOffsetY = approach.direction().leftY()
+                    * Lane.LANE_HALF_WIDTH;
+            graphics.drawLine(
+                    approach.x1() + laneOffsetX,
+                    approach.y1() + laneOffsetY,
+                    approach.x2() + laneOffsetX,
+                    approach.y2() + laneOffsetY);
+        }
+
+        for (Road road : engine.getNetwork().getRoads()) {
             graphics.setColor(LANE_MARKING);
             graphics.setStroke(new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
                     10.0f, new float[]{9.0f, 9.0f}, 0.0f));
             graphics.drawLine(road.getX1(), road.getY1(), road.getX2(), road.getY2());
         }
         graphics.setStroke(originalStroke);
-    }
-
-    private Optional<RoadCongestion> congestionFor(
-            Road road, CongestionReport report) {
-        return report.roads().stream()
-                .filter(result -> result.x1() == road.getX1()
-                        && result.y1() == road.getY1()
-                        && result.x2() == road.getX2()
-                        && result.y2() == road.getY2())
-                .findFirst();
     }
 
     static Color roadColour(CongestionLevel level) {
@@ -314,17 +321,23 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
                 statistics.queuedVehicleCount(),
                 statistics.queuedFraction() * 100.0), 32, 78);
 
-        String worstSummary = report.mostCongestedRoad()
-                .map(road -> String.format("worst road %s  score %.1f",
-                        road.level(), road.score()))
-                .orElse("worst road unavailable");
-        graphics.drawString(worstSummary, 32, 97);
+        String congestionSummary = report.mostCongestedApproach()
+                .map(approach -> String.format(
+                        "busiest road %s  queue %d  score %.0f",
+                        approach.level(),
+                        approach.statistics().queuedVehicleCount(),
+                        approach.score()))
+                .orElse("congestion information unavailable");
+        graphics.drawString(congestionSummary, 32, 97);
 
-        String worstLocation = report.mostCongestedRoad()
-                .map(road -> String.format("(%d,%d) to (%d,%d)",
-                        road.x1(), road.y1(), road.x2(), road.y2()))
-                .orElse("no roads in network");
-        graphics.drawString(worstLocation, 32, 116);
+        String congestionLocation = report.mostCongestedApproach()
+                .map(approach -> String.format(
+                        "%s towards intersection (%d,%d)",
+                        approach.direction(),
+                        approach.intersectionX(),
+                        approach.intersectionY()))
+                .orElse("no signal approaches in network");
+        graphics.drawString(congestionLocation, 32, 116);
         graphics.drawString(String.format("signal timing %s  [T to switch]",
                 engine.getSignalTimingMode().displayName()), 32, 135);
         graphics.drawString(String.format("run seed %016X",

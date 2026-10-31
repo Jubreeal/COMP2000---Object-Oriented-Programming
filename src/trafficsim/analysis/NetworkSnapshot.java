@@ -10,7 +10,14 @@ import java.util.stream.Stream;
  * Immutable view of the road network at the end of one simulation tick.
  * Analysis can safely process this data without reading mutable lane lists.
  */
-public record NetworkSnapshot(long tick, List<RoadSnapshot> roads) {
+public record NetworkSnapshot(
+        long tick,
+        List<RoadSnapshot> roads,
+        List<ApproachSnapshot> approaches) {
+
+    public NetworkSnapshot(long tick, List<RoadSnapshot> roads) {
+        this(tick, roads, List.of());
+    }
 
     public NetworkSnapshot {
         if (tick < 0) {
@@ -18,6 +25,8 @@ public record NetworkSnapshot(long tick, List<RoadSnapshot> roads) {
         }
         roads = List.copyOf(
                 Objects.requireNonNull(roads, "Roads cannot be null."));
+        approaches = List.copyOf(
+                Objects.requireNonNull(approaches, "Approaches cannot be null."));
     }
 
     /**
@@ -31,7 +40,15 @@ public record NetworkSnapshot(long tick, List<RoadSnapshot> roads) {
             List<RoadSnapshot> roads = network.getRoads().stream()
                     .map(RoadSnapshot::from)
                     .toList();
-            return new NetworkSnapshot(tick, roads);
+            List<ApproachSnapshot> approaches = network.getIntersections().stream()
+                    .flatMap(intersection -> intersection.getConnectedRoads().stream()
+                            .flatMap(road -> road.getLanes().stream()
+                                    .map(lane -> ApproachSnapshot.from(
+                                            road,
+                                            lane,
+                                            intersection))))
+                    .toList();
+            return new NetworkSnapshot(tick, roads, approaches);
         }
     }
 

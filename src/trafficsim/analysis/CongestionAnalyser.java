@@ -12,6 +12,8 @@ public final class CongestionAnalyser {
     private static final double QUEUED_FRACTION_WEIGHT = 0.40;
     private static final double MODERATE_SCORE = 30.0;
     private static final double HIGH_SCORE = 60.0;
+    private static final long MODERATE_APPROACH_QUEUE = 2;
+    private static final long HIGH_APPROACH_QUEUE = 4;
 
     private static final Comparator<RoadCongestion> MOST_CONGESTED_FIRST =
             Comparator.comparingDouble(RoadCongestion::score)
@@ -20,6 +22,13 @@ public final class CongestionAnalyser {
                     .thenComparingInt(RoadCongestion::y1)
                     .thenComparingInt(RoadCongestion::x2)
                     .thenComparingInt(RoadCongestion::y2);
+
+    private static final Comparator<ApproachCongestion> BUSIEST_APPROACH_FIRST =
+            Comparator.comparingDouble(ApproachCongestion::score)
+                    .reversed()
+                    .thenComparingInt(ApproachCongestion::intersectionX)
+                    .thenComparingInt(ApproachCongestion::intersectionY)
+                    .thenComparing(ApproachCongestion::direction);
 
     public CongestionReport analyse(NetworkSnapshot snapshot) {
         return analyse(snapshot, false);
@@ -41,6 +50,14 @@ public final class CongestionAnalyser {
                 .sorted(MOST_CONGESTED_FIRST)
                 .toList();
 
+        Stream<ApproachSnapshot> approachStream = parallel
+                ? snapshot.approaches().parallelStream()
+                : snapshot.approaches().stream();
+        var approachResults = approachStream
+                .map(this::analyseApproach)
+                .sorted(BUSIEST_APPROACH_FIRST)
+                .toList();
+
         Stream<VehicleSnapshot> vehicleStream = snapshot.vehicles();
         if (parallel) {
             vehicleStream = vehicleStream.parallel();
@@ -51,7 +68,8 @@ public final class CongestionAnalyser {
         return new CongestionReport(
                 snapshot.tick(),
                 networkStatistics,
-                roadResults);
+                roadResults,
+                approachResults);
     }
 
     private RoadCongestion analyseRoad(RoadSnapshot road) {
@@ -83,5 +101,36 @@ public final class CongestionAnalyser {
             return CongestionLevel.MODERATE;
         }
         return CongestionLevel.LOW;
+    }
+
+    private ApproachCongestion analyseApproach(ApproachSnapshot approach) {
+        TrafficStatistics statistics = approach.vehicles().stream()
+                .collect(CongestionCollector.toTrafficStatistics());
+        double score = 100.0 * Math.min(
+                1.0,
+                (double) statistics.queuedVehicleCount()
+                        / HIGH_APPROACH_QUEUE);
+
+        CongestionLevel level;
+        if (statistics.queuedVehicleCount() >= HIGH_APPROACH_QUEUE) {
+            level = CongestionLevel.HIGH;
+        } else if (statistics.queuedVehicleCount()
+                >= MODERATE_APPROACH_QUEUE) {
+            level = CongestionLevel.MODERATE;
+        } else {
+            level = CongestionLevel.LOW;
+        }
+
+        return new ApproachCongestion(
+                approach.x1(),
+                approach.y1(),
+                approach.x2(),
+                approach.y2(),
+                approach.intersectionX(),
+                approach.intersectionY(),
+                approach.direction(),
+                statistics,
+                score,
+                level);
     }
 }

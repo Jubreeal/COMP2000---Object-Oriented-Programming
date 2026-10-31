@@ -14,10 +14,39 @@ public final class CongestionAnalyserTest {
 
     public static void main(String[] args) {
         classifiesRoadCongestionUsingTheAgreedScore();
+        classifiesApproachesByVisibleQueueLength();
         ordersRoadsFromHighestToLowestCongestion();
         handlesAnEmptyNetwork();
         producesTheSameSequentialAndParallelReport();
         System.out.println("CongestionAnalyserTest passed");
+    }
+
+    private static void classifiesApproachesByVisibleQueueLength() {
+        CongestionReport report = new CongestionAnalyser().analyse(
+                new NetworkSnapshot(
+                        42,
+                        List.of(),
+                        List.of(
+                                approach(0, speeds(0.0)),
+                                approach(100, speeds(0.0, 0.0)),
+                                approach(200, speeds(0.0, 0.0, 0.0, 0.0)))));
+
+        ApproachCongestion high = report.approaches().get(0);
+        ApproachCongestion moderate = report.approaches().get(1);
+        ApproachCongestion low = report.approaches().get(2);
+
+        require(high.level() == CongestionLevel.HIGH,
+                "Four queued vehicles should be high congestion.");
+        requireClose(high.score(), 100.0,
+                "Four queued vehicles should fill the queue reference.");
+        require(moderate.level() == CongestionLevel.MODERATE,
+                "Two queued vehicles should be moderate congestion.");
+        requireClose(moderate.score(), 50.0,
+                "Two queued vehicles should score 50.");
+        require(low.level() == CongestionLevel.LOW,
+                "One newly stopped vehicle should remain low congestion.");
+        requireClose(low.score(), 25.0,
+                "One queued vehicle should score 25.");
     }
 
     private static void classifiesRoadCongestionUsingTheAgreedScore() {
@@ -78,10 +107,16 @@ public final class CongestionAnalyserTest {
 
     private static void producesTheSameSequentialAndParallelReport() {
         CongestionAnalyser analyser = new CongestionAnalyser();
-        NetworkSnapshot snapshot = networkWith(
-                road(0, speeds(0.0, 0.3, 1.2, 2.0)),
-                road(100, speeds(0.0, 0.0, 0.4)),
-                road(200, speeds(0.8, 1.1, 1.7, 2.2, 2.7)));
+        NetworkSnapshot snapshot = new NetworkSnapshot(
+                42,
+                List.of(
+                        road(0, speeds(0.0, 0.3, 1.2, 2.0)),
+                        road(100, speeds(0.0, 0.0, 0.4)),
+                        road(200, speeds(0.8, 1.1, 1.7, 2.2, 2.7))),
+                List.of(
+                        approach(300, speeds(0.0)),
+                        approach(400, speeds(0.0, 0.0, 0.2)),
+                        approach(500, speeds(1.0, 1.5))));
 
         CongestionReport sequential = analyser.analyse(snapshot);
         CongestionReport parallel = analyser.analyseParallel(snapshot);
@@ -111,6 +146,22 @@ public final class CongestionAnalyserTest {
                     parallelRoad.score(),
                     "Sequential and parallel congestion scores should match.");
         }
+
+        require(sequential.approaches().size()
+                        == parallel.approaches().size(),
+                "Sequential and parallel reports should contain the same approaches.");
+        for (int index = 0; index < sequential.approaches().size(); index++) {
+            ApproachCongestion sequentialApproach =
+                    sequential.approaches().get(index);
+            ApproachCongestion parallelApproach =
+                    parallel.approaches().get(index);
+            require(sequentialApproach.level() == parallelApproach.level(),
+                    "Sequential and parallel approach levels should match.");
+            requireClose(
+                    sequentialApproach.score(),
+                    parallelApproach.score(),
+                    "Sequential and parallel approach scores should match.");
+        }
     }
 
     private static NetworkSnapshot networkWith(RoadSnapshot... roads) {
@@ -119,6 +170,20 @@ public final class CongestionAnalyserTest {
 
     private static RoadSnapshot road(int x, List<VehicleSnapshot> vehicles) {
         return new RoadSnapshot(x, 0, x + 80, 0, vehicles);
+    }
+
+    private static ApproachSnapshot approach(
+            int x,
+            List<VehicleSnapshot> vehicles) {
+        return new ApproachSnapshot(
+                x,
+                0,
+                x + 80,
+                0,
+                x + 100,
+                0,
+                Direction.EAST,
+                vehicles);
     }
 
     private static List<VehicleSnapshot> speeds(double... speeds) {

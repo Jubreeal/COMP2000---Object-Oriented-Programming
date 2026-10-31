@@ -3,9 +3,12 @@ package trafficsim.view;
 import trafficsim.analysis.CongestionLevel;
 import trafficsim.engine.SimulationEngine;
 import trafficsim.engine.VehicleSpawner;
+import trafficsim.model.light.TrafficLight;
 import trafficsim.model.road.Road;
 import trafficsim.model.road.RoadNetwork;
+import trafficsim.model.road.SignalisedIntersection;
 import trafficsim.model.vehicle.Car;
+import trafficsim.util.Axis;
 import trafficsim.util.Direction;
 
 import javax.imageio.ImageIO;
@@ -27,8 +30,19 @@ public final class SimulationDisplayCongestionTest {
         Road road = new Road(
                 200, 350, 800, 350, List.of(Direction.EAST));
         road.getLanes().get(0).addVehicle(
-                new Car(250, 341, Direction.EAST));
+                new Car(410, 341, Direction.EAST));
+        road.getLanes().get(0).addVehicle(
+                new Car(440, 341, Direction.EAST));
+        road.getLanes().get(0).addVehicle(
+                new Car(620, 341, Direction.EAST));
+
+        SignalisedIntersection moderateIntersection = intersectionAt(500, 350);
+        moderateIntersection.connect(road);
+        SignalisedIntersection lowIntersection = intersectionAt(700, 350);
+        lowIntersection.connect(road);
         network.addRoad(road);
+        network.addIntersection(moderateIntersection);
+        network.addIntersection(lowIntersection);
 
         SimulationEngine engine = new SimulationEngine(
                 network,
@@ -48,13 +62,28 @@ public final class SimulationDisplayCongestionTest {
             ImageIO.write(image, "png", new File(args[0]));
         }
 
-        Color renderedRoad = new Color(image.getRGB(500, 358), true);
-        Color expectedRoad = SimulationDisplay.roadColour(
+        Color renderedModerateApproach = new Color(
+                image.getRGB(460, 341), true);
+        Color expectedModerateApproach = SimulationDisplay.roadColour(
                 CongestionLevel.MODERATE);
-        require(renderedRoad.equals(expectedRoad),
-                "One queued vehicle should render the road in the moderate colour.");
+        require(renderedModerateApproach.equals(expectedModerateApproach),
+                "Two queued vehicles should render their approach as moderate.");
+
+        Color renderedLowApproach = new Color(
+                image.getRGB(650, 341), true);
+        Color expectedLowApproach = SimulationDisplay.roadColour(
+                CongestionLevel.LOW);
+        require(renderedLowApproach.equals(expectedLowApproach),
+                "One newly stopped vehicle should leave its approach low.");
 
         System.out.println("SimulationDisplayCongestionTest passed");
+    }
+
+    private static SignalisedIntersection intersectionAt(int x, int y) {
+        return new SignalisedIntersection(
+                x,
+                y,
+                new TrafficLight(50, 30, 3, Axis.HORIZONTAL));
     }
 
     private static void require(boolean condition, String message) {
