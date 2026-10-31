@@ -354,11 +354,15 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
     }
 
     private void drawHeatmapLegend(Graphics2D graphics) {
+        final int legendWidth = 330;
         int y = getHeight() - 45;
+        int legendX = (getWidth() - legendWidth) / 2;
         graphics.setColor(new Color(12, 18, 23, 185));
-        graphics.fillRoundRect(200, y, 330, 28, 12, 12);
+        graphics.fillRoundRect(legendX, y, legendWidth, 28, 12, 12);
         graphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        int itemX = 214;
+        String[] labels = {"road", "low", "moderate", "high"};
+        int itemX = legendX
+                + (legendWidth - legendItemsWidth(graphics, labels)) / 2;
         itemX = drawLegendItem(graphics, itemX, y + 9, ROAD, "road");
         itemX = drawLegendItem(graphics, itemX, y + 9, LOW_CONGESTION, "low");
         itemX = drawLegendItem(
@@ -368,6 +372,17 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
                 MODERATE_CONGESTION,
                 "moderate");
         drawLegendItem(graphics, itemX, y + 9, HIGH_CONGESTION, "high");
+    }
+
+    private int legendItemsWidth(Graphics2D graphics, String[] labels) {
+        final int swatchAndLabelOffset = 18;
+        final int gapBetweenItems = 24;
+        int width = 0;
+        for (String label : labels) {
+            width += swatchAndLabelOffset
+                    + graphics.getFontMetrics().stringWidth(label);
+        }
+        return width + gapBetweenItems * (labels.length - 1);
     }
 
     private int drawLegendItem(
