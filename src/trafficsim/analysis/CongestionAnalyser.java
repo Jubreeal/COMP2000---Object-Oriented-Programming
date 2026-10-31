@@ -13,7 +13,7 @@ public final class CongestionAnalyser {
     private static final double MODERATE_SCORE = 30.0;
     private static final double HIGH_SCORE = 60.0;
     private static final long MODERATE_APPROACH_QUEUE = 2;
-    private static final long HIGH_APPROACH_QUEUE = 4;
+    private static final long HIGH_APPROACH_QUEUE = 3;
 
     private static final Comparator<RoadCongestion> MOST_CONGESTED_FIRST =
             Comparator.comparingDouble(RoadCongestion::score)

@@ -30,17 +30,26 @@ public final class SimulationDisplayCongestionTest {
         Road road = new Road(
                 200, 350, 800, 350, List.of(Direction.EAST));
         road.getLanes().get(0).addVehicle(
+                new Car(205, 341, Direction.EAST));
+        road.getLanes().get(0).addVehicle(
+                new Car(225, 341, Direction.EAST));
+        road.getLanes().get(0).addVehicle(
+                new Car(245, 341, Direction.EAST));
+        road.getLanes().get(0).addVehicle(
                 new Car(410, 341, Direction.EAST));
         road.getLanes().get(0).addVehicle(
                 new Car(440, 341, Direction.EAST));
         road.getLanes().get(0).addVehicle(
                 new Car(620, 341, Direction.EAST));
 
+        SignalisedIntersection highIntersection = intersectionAt(300, 350);
+        highIntersection.connect(road);
         SignalisedIntersection moderateIntersection = intersectionAt(500, 350);
         moderateIntersection.connect(road);
         SignalisedIntersection lowIntersection = intersectionAt(700, 350);
         lowIntersection.connect(road);
         network.addRoad(road);
+        network.addIntersection(highIntersection);
         network.addIntersection(moderateIntersection);
         network.addIntersection(lowIntersection);
 
@@ -61,6 +70,13 @@ public final class SimulationDisplayCongestionTest {
         if (args.length == 1) {
             ImageIO.write(image, "png", new File(args[0]));
         }
+
+        Color renderedHighApproach = new Color(
+                image.getRGB(260, 341), true);
+        Color expectedHighApproach = SimulationDisplay.roadColour(
+                CongestionLevel.HIGH);
+        require(renderedHighApproach.equals(expectedHighApproach),
+                "Three queued vehicles should render their approach as high.");
 
         Color renderedModerateApproach = new Color(
                 image.getRGB(460, 341), true);

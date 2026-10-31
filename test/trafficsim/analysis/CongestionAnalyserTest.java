@@ -29,24 +29,24 @@ public final class CongestionAnalyserTest {
                         List.of(
                                 approach(0, speeds(0.0)),
                                 approach(100, speeds(0.0, 0.0)),
-                                approach(200, speeds(0.0, 0.0, 0.0, 0.0)))));
+                                approach(200, speeds(0.0, 0.0, 0.0)))));
 
         ApproachCongestion high = report.approaches().get(0);
         ApproachCongestion moderate = report.approaches().get(1);
         ApproachCongestion low = report.approaches().get(2);
 
         require(high.level() == CongestionLevel.HIGH,
-                "Four queued vehicles should be high congestion.");
+                "Three queued vehicles should be high congestion.");
         requireClose(high.score(), 100.0,
-                "Four queued vehicles should fill the queue reference.");
+                "Three queued vehicles should fill the queue reference.");
         require(moderate.level() == CongestionLevel.MODERATE,
                 "Two queued vehicles should be moderate congestion.");
-        requireClose(moderate.score(), 50.0,
-                "Two queued vehicles should score 50.");
+        requireClose(moderate.score(), 200.0 / 3.0,
+                "Two queued vehicles should score two-thirds of 100.");
         require(low.level() == CongestionLevel.LOW,
                 "One newly stopped vehicle should remain low congestion.");
-        requireClose(low.score(), 25.0,
-                "One queued vehicle should score 25.");
+        requireClose(low.score(), 100.0 / 3.0,
+                "One queued vehicle should score one-third of 100.");
     }
 
     private static void classifiesRoadCongestionUsingTheAgreedScore() {

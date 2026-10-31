@@ -358,9 +358,10 @@ public final class SimulationDisplay extends JPanel implements SimulationObserve
         graphics.setColor(new Color(12, 18, 23, 185));
         graphics.fillRoundRect(200, y, 330, 28, 12, 12);
         graphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        drawLegendItem(graphics, 214, y + 9, LOW_CONGESTION, "low");
-        drawLegendItem(graphics, 294, y + 9, MODERATE_CONGESTION, "moderate");
-        drawLegendItem(graphics, 410, y + 9, HIGH_CONGESTION, "high");
+        drawLegendItem(graphics, 214, y + 9, ROAD, "road");
+        drawLegendItem(graphics, 274, y + 9, LOW_CONGESTION, "low");
+        drawLegendItem(graphics, 334, y + 9, MODERATE_CONGESTION, "moderate");
+        drawLegendItem(graphics, 446, y + 9, HIGH_CONGESTION, "high");
     }
 
     private void drawLegendItem(
