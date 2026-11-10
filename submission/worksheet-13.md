@@ -300,40 +300,23 @@ completed from my own notes rather than invented retrospectively.
 
 **What was the most important concept you learned?**
 
-The most important concept was designing around responsibilities and safe
-boundaries rather than treating object-oriented programming as simply creating
-many classes. The clearest example was separating the mutable simulation model
-from immutable analysis data. The engine owns updates, snapshot records own a
-consistent read-only representation, `CongestionAnalyser` owns interpretation,
-and the display only renders the result. Strategy, State, and Observer then give
-each changing behaviour an explicit home. This made the program easier to test,
-explain, and extend.
+The most important concept I learned was that effective object-oriented design is based on assigning clear responsibilities and defining safe boundaries, rather than simply dividing a program into many classes. Earlier in the semester, I associated object-oriented programming mainly with classes, inheritance, and encapsulation. This project showed me that the more important decision is determining which object should own each behaviour and how objects should collaborate without becoming tightly coupled.
+
+The clearest example was separating the mutable simulation model from immutable analytical data. `SimulationEngine` owns state changes, the snapshot records provide a consistent read-only representation, `CongestionAnalyser` interprets that data, and `SimulationDisplay` renders the resulting report. Strategy, State, and Observer further give timing policy, signal transitions, and update notification separate responsibilities. This structure made the program safer to analyse concurrently and easier to test, explain, and extend. It changed how I approach software design: I now consider responsibilities, dependencies, and change boundaries before deciding what classes to create.
 
 **What design trade-off did you face, and how did you resolve it?**
 
-The main trade-off was concurrency versus correctness and complexity. Directly
-running a parallel stream over live lanes and vehicles would look advanced, but
-those objects change on the simulation thread and could produce races or an
-inconsistent report. Holding the network lock throughout parallel analysis would
-be safe but would freeze simulation and painting. I resolved this by copying one
-complete tick into immutable records under the lock, releasing the lock, and
-analysing only the copies. This adds allocation each tick, but it creates a clear
-thread-safety boundary and permits sequential or parallel processing.
+The main trade-off was balancing concurrency with correctness and implementation complexity. Running a parallel stream directly over live lanes and vehicles could improve performance on a large network, but those objects are continuously modified by the simulation thread. Parallel workers could therefore observe different moments within the same tick or encounter unsafe concurrent modification. Keeping the network locked throughout analysis would protect the data, but it would also delay simulation updates and Swing rendering.
 
-A second trade-off was heatmap sensitivity. A threshold of four queued vehicles
-made high congestion effectively invisible in the tested run, while a threshold
-that was too low would mark normal traffic as severe. I used observed queue
-frequencies to select three as the high threshold and retained the dark road
-colour as a neutral baseline outside measured approaches.
+I resolved this by capturing one complete tick as immutable snapshot records while holding the network lock, then releasing the lock before analysis. This introduces additional object allocation and copying on every tick, but it creates a clear thread-safety boundary and allows the same analysis to run sequentially or in parallel. Because the current network is small, sequential analysis remains the live default, while the parallel implementation is retained and tested for larger datasets. I prioritised predictable behaviour and correctness over using parallelism where it offered no measured benefit.
+
+A second trade-off concerned heatmap sensitivity. Classifying high congestion only after four vehicles were queued made the red state effectively unreachable during the calibrated run. However, setting the threshold too low would exaggerate routine traffic-light delays. I analysed the observed queue distribution and selected three queued vehicles as the high threshold, while two represents moderate congestion. Unmeasured road sections retain their dark base colour, preventing the heatmap from implying congestion where no directional approach is being evaluated.
 
 **If you started over, what would you do differently?**
 
-I would define the road network as a graph and agree on interfaces, invariants,
-and automated tests before dividing the implementation. The coordinate-based
-model works well for straight movement but makes turning, routing, and rerouting
-expensive additions. I would also establish feature branches, small commits, and
-repeatable experiments from the first week. This would make individual work and
-integration easier to review and reduce late uncertainty about group ownership.
+I would begin by modelling the road network as a graph, with intersections represented as nodes and road segments represented as edges. The existing coordinate-based model supports straight movement effectively, but turning, destination selection, dynamic routing, and congestion-aware rerouting require substantial changes. Establishing the graph structure and its invariants at the beginning would have provided a stronger foundation for later features such as adaptive routing and police-vehicle pursuit.
+
+I would also agree on interfaces, ownership boundaries, and a shared definition of completion before dividing the group’s implementation work. Automated tests would be introduced alongside the first classes rather than mainly during later integration. From a version-control perspective, I would use clearly named feature branches, smaller commits, and regular code reviews from the beginning. Finally, I would establish repeatable performance experiments before tuning adaptive behaviour. These practices would make contributions easier to understand and integrate, while reducing uncertainty about responsibilities and whether a feature had genuinely improved the simulation.
 
 **What feedback from the Week 7 submission did you act on?**
 
