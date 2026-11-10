@@ -2,7 +2,7 @@
 
 **Student name:** Jubril Olaboopo
 
-**GitHub repo URL:** https://github.com/Jubreeal/COMP2000---Object-Oriented-Programming
+**GitHub repo URL:** [https://github.com/Jubreeal/COMP2000---Object-Oriented-Programming](https://github.com/Jubreeal/COMP2000---Object-Oriented-Programming/tree/assignment-2-development)
 
 ---
 
@@ -317,3 +317,15 @@ The Week 7 feedback praised the project’s diagram, technical complexity, creat
 I also retained the technical ambition recognised by the marker, but made each advanced feature address a specific problem. Strategy supports runtime variation in signal timing, the custom collector calculates related traffic statistics in one reduction, and immutable snapshots provide a safe boundary for sequential and parallel analysis. Automated tests verify strategy behaviour, snapshot consistency, sequential–parallel equivalence, engine integration, and display output. I also documented alternatives and limitations rather than treating complexity as automatically beneficial.
 
 The marker also noted that my logbook entries were good but did not appear timely. I understood this as feedback about documenting workshop participation and learning soon after each class, rather than about the timing of code commits. In response, I made the Assignment 2 entries explicitly reflect the relevant workshop activities, concepts, and design discussions. For example, my Week 13 reflection records the presentation activity and the idea of introducing a police vehicle that detects and pursues speeding vehicles. This provides clearer evidence of what I gained from the workshops and how those activities influenced my thinking about the project.
+
+## 5. References
+
+Freeman, E., & Robson, E. (2020). *Head First Design Patterns: Building extensible and maintainable object-oriented software* (2nd ed.). O’Reilly Media. https://www.oreilly.com/library/view/head-first-design/9781492077992/
+
+Google. (n.d.). *Use layers to find places, traffic, terrain, biking and transit*. Google Maps Help. https://support.google.com/maps/answer/3092439
+
+Oracle. (2023a). *Collector (Java SE 21 & JDK 21)*. https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Collector.html
+
+Oracle. (2023b). *Package java.util.stream (Java SE 21 & JDK 21)*. https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/package-summary.html
+
+Oracle. (2023c). *Package javax.swing (Java SE 21 & JDK 21)*. https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/package-summary.html
