@@ -18,7 +18,7 @@ The accompanying `assignment-2-pattern-diagram.pdf` identifies the participants 
 
 2. **State Pattern — traffic-light lifecycle:** `TrafficLight.java` acts as the context and delegates phase-specific behaviour to the current `LightState`. The state interface is defined in `LightState.java`, with `GreenState.java`, `YellowState.java`, and `RedState.java` providing the concrete implementations. Each state determines when and how the light transitions to the next phase: green changes to yellow, yellow changes to red, and red changes back to green after swapping the active road axis. This keeps transition logic within the relevant state instead of placing all phase behaviour in one large conditional inside `TrafficLight`.
 
-3. **Observer Pattern — simulation and display communication:** `SimulationEngine.java` acts as the subject and maintains a collection of observers implementing the SimulationObserver` interface. `SimulationDisplay.java` is the concrete observer and registers with the engine to receive update notifications. After completing a simulation tick and producing the latest congestion report, the engine calls `onSimulationStep()` on each observer. The display responds by requesting a repaint, allowing the interface to reflect the latest state without coupling the simulation engine directly to Swing rendering code.
+3. **Observer Pattern — simulation and display communication:** `SimulationEngine.java` acts as the subject and maintains a collection of observers 'implementing the SimulationObserver` interface. `SimulationDisplay.java` is the concrete observer and registers with the engine to receive update notifications. After completing a simulation tick and producing the latest congestion report, the engine calls `onSimulationStep()` on each observer. The display responds by requesting a repaint, allowing the interface to reflect the latest state without coupling the simulation engine directly to Swing rendering code.
    
 ### 1.2. For each pattern, paste a code snippet showing the key interaction between participants.
 
@@ -143,7 +143,7 @@ The following production files use lambda expressions, stream pipelines, or the 
 - `src/trafficsim/analysis/NetworkSnapshot.java` — uses nested pipelines to capture immutable road, approach, and vehicle data.
 - `src/trafficsim/analysis/RoadSnapshot.java` — flattens the vehicles from multiple lanes into one immutable road snapshot.
 - `src/trafficsim/engine/SimulationEngine.java` — uses a lambda for the simulation thread and a stream pipeline to apply a selected timing strategy to every signalised intersection.
-- `src/trafficsim/engine/Statistics.java` — calculates average speed and stopped-vehicle percentages using streams.
+- `src/trafficsim/engine/Statistics.java` — calculates average speed and stopped-vehicle count using streams.
 - `src/trafficsim/engine/VehicleSpawner.java` — uses lambdas as vehicle factories and as a predicate for removing vehicles outside the network.
 - `src/trafficsim/factory/NetworkLoader.java` — uses streams for direction parsing and network validation.
 - `src/trafficsim/model/road/SignalisedIntersection.java` — uses nested streams to count queued vehicles travelling on a selected road axis.
@@ -276,7 +276,7 @@ I retained the Strategy architecture because it correctly supports interchangeab
 
 Inspired by the Week 13 workshop presentations, I would add a speed-enforcement system involving a police vehicle. Individual roads would define speed limits, and a strategically positioned police vehicle would target the first vehicle detected travelling more than 3 km/h above the applicable limit. The police vehicle could use State to represent waiting, pursuing, and returning behaviours, while a Strategy could determine how a target is selected. This would introduce another autonomous agent whose local decisions could produce emergent interactions with traffic signals, congestion, and other vehicles.
 
-I would also create a headless experimental framework that runs both signal-timing strategies across multiple identical seeds and records throughput, mean delay, maximum queue length, and directional fairness. The adaptive strategy could then be redesigned to measure approaching demand and predicted arrivals rather than only vehicles already stopped on the green axis.
+I would also create an automated experiment that runs both signal-timing strategies several times using the same simulation seeds. This would provide a fair comparison of vehicle throughput, waiting times, queue lengths, and whether either road direction experiences excessive delays. I would use the results to improve the adaptive strategy so that it considers approaching vehicles and predicted demand, rather than only vehicles that have already stopped.
 
 Finally, I would replace the coordinate-only road model with a graph-based network. Vehicles could choose destinations, turn at intersections, and use routing strategies based on distance, predicted travel time, or congestion. This would support dynamic rerouting and would also allow the proposed police vehicle to pursue a target across multiple connected roads.
 
@@ -286,7 +286,7 @@ Finally, I would replace the coordinate-only road model with a graph-based netwo
 
 ### 4.1. Attach or link your logbook entries for Weeks 7–13.
 
-My individual logbook for Weeks 7–13 is submitted alongside this worksheet as `logbook_weeks_7-13.pdf`. The dated entries document the activities completed during each workshop, the concepts I learned, how those concepts influenced the traffic simulation, and my reflections on the project’s design and development.
+My individual logbook for Weeks 7–13 is submitted alongside this worksheet as `Logbook_weeks_7-13.pdf`. The dated entries document the activities completed during each workshop, the concepts I learned, how those concepts influenced the traffic simulation, and my reflections on the project’s design and development.
 
 ### 4.2. Reflect on the semester.
 
