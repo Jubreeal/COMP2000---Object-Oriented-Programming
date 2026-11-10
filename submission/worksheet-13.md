@@ -1,6 +1,6 @@
 # COMP2000 Worksheet 2 — Final Submission
 
-**Student name:** [ADD YOUR FULL NAME]
+**Student name:** Jubril Olaboopo
 
 **GitHub repo URL:** https://github.com/Jubreeal/COMP2000---Object-Oriented-Programming
 
@@ -8,35 +8,23 @@
 
 ## 1. Design Patterns
 
-The accompanying `assignment-2-pattern-diagram.pdf` shows the participants and
-relationships described below. Strategy was the principal pattern added for
-Assignment 2. State and Observer were retained from the earlier design because
-they collaborate directly with the new signal-control and analytics features.
+The final simulation applies three behavioural design patterns: Strategy, State, and Observer. Strategy was the principal pattern introduced for Assignment 2, enabling traffic-signal timing policies to be selected and changed at runtime without modifying intersection logic. State encapsulates the transitions between green, yellow, and red signal phases, while Observer decouples simulation updates from the Swing display. Together, these patterns improve separation of responsibilities, extensibility, and testability.
+
+The accompanying `assignment-2-pattern-diagram.pdf` identifies the participants in each pattern and illustrates their relationships within the simulation.
 
 ### 1.1. Which design pattern(s) did you implement? Name them and state where each appears in your codebase.
 
-1. **Strategy** controls signal timing. `SignalTimingStrategy` is the strategy
-   interface, while `SignalTimingStrategies` supplies fixed-time and adaptive
-   queue-pressure implementations as lambda expressions. `SignalisedIntersection`
-   is the context: it creates a `SignalTimingContext` from current traffic and
-   delegates the extension decision to its selected strategy. `SignalTimingMode`
-   names the available policies, and `SimulationEngine` changes the policy for
-   every signalised intersection at runtime. The display allows the user to
-   switch modes with the `T` key or the timing button.
+1. **Strategy Pattern — traffic-signal timing:** The strategy interface is defined in `src/trafficsim/strategy/SignalTimingStrategy.java`. Its fixed-time and adaptive queue-pressure implementations are provided as lambda expressions in `SignalTimingStrategies.java`. `SignalisedIntersection.java` acts as the context: it collects the current signal phase, remaining green time, previous extensions, and queue lengths in an immutable `SignalTimingContext`, then delegates the extension decision to the selected strategy. `SignalTimingMode.java` associates each available mode with its strategy, while `SimulationEngine.java` applies the selected strategy consistently across all signalised intersections. Users can switch strategies at runtime using the `T` key or the timing-control button.
 
-2. **State** controls each traffic light's lifecycle. `TrafficLight` is the
-   context, `LightState` is the state interface, and `GreenState`, `YellowState`,
-   and `RedState` are the concrete states. Each state owns its transition rule;
-   `RedState` also swaps the active road axis before returning to green.
+2. **State Pattern — traffic-light lifecycle:** `TrafficLight.java` acts as the context and delegates phase-specific behaviour to the current `LightState`. The state interface is defined in `LightState.java`, with `GreenState.java`, `YellowState.java`, and `RedState.java` providing the concrete implementations. Each state determines when and how the light transitions to the next phase: green changes to yellow, yellow changes to red, and red changes back to green after swapping the active road axis. This keeps transition logic within the relevant state instead of placing all phase behaviour in one large conditional inside `TrafficLight`.
 
-3. **Observer** separates the simulation from its Swing display.
-   `SimulationEngine` is the subject, `SimulationObserver` is the observer
-   interface, and `SimulationDisplay` is the concrete observer. The engine
-   notifies the display only after a complete simulation tick.
-
+3. **Observer Pattern — simulation and display communication:** `SimulationEngine.java` acts as the subject and maintains a collection of observers implementing the SimulationObserver` interface. `SimulationDisplay.java` is the concrete observer and registers with the engine to receive update notifications. After completing a simulation tick and producing the latest congestion report, the engine calls `onSimulationStep()` on each observer. The display responds by requesting a repaint, allowing the interface to reflect the latest state without coupling the simulation engine directly to Swing rendering code.
+   
 ### 1.2. For each pattern, paste a code snippet showing the key interaction between participants.
 
-**Strategy — decision and context interaction**
+#### Strategy — policy delegation
+
+`SignalTimingStrategy` defines the decision that may vary, while `SignalTimingStrategies` provides the fixed-time and adaptive implementations:
 
 ```java
 @FunctionalInterface
@@ -59,8 +47,7 @@ private static final SignalTimingStrategy ADAPTIVE_QUEUE_PRESSURE = context -> {
 };
 ```
 
-`SignalisedIntersection` supplies the current traffic data but does not contain
-the policy itself:
+`SignalisedIntersection` creates an immutable context from the current simulation state and delegates the decision to its selected strategy:
 
 ```java
 SignalTimingContext context = new SignalTimingContext(
@@ -70,22 +57,34 @@ SignalTimingContext context = new SignalTimingContext(
         queuedOnAxis(greenAxis),
         queuedOnAxis(greenAxis.other()));
 
-if (timingStrategy.shouldExtendGreen(context)) {
-    light.extendCurrentPhase(SimConstants.ADAPTIVE_EXTEND_TICKS);
-    extensionsThisPhase++;
+if (!timingStrategy.shouldExtendGreen(context)) {
+    return;
 }
+
+light.extendCurrentPhase(SimConstants.ADAPTIVE_EXTEND_TICKS);
+extensionsThisPhase++;
 ```
 
-**State — `TrafficLight` delegates to its current phase object**
+The intersection remains responsible for observing and updating the traffic light, while the selected strategy determines whether an extension is appropriate. This is the central Strategy-pattern interaction.
+
+#### State — phase-specific transition behaviour
+
+`TrafficLight` delegates each update to its current `LightState`. The concrete state then determines whether a transition is required:
 
 ```java
-// TrafficLight (context)
+public interface LightState {
+    void update(TrafficLight light);
+    LightPhase getPhase();
+}
+
+// TrafficLight context
 public void update() {
     timer++;
     state.update(this);
 }
 
-// GreenState (concrete state)
+// GreenState
+@Override
 public void update(TrafficLight light) {
     if (light.getTimer() >= light.getGreenDuration()) {
         light.setState(new YellowState());
@@ -93,100 +92,74 @@ public void update(TrafficLight light) {
 }
 ```
 
-**Observer — engine notification and display response**
+`TrafficLight` manages shared signal data such as the timer and active axis, but it does not decide the transition rules itself. Those rules belong to the current state object.
+
+#### Observer — completed-tick notification
+
+`SimulationObserver` defines the notification contract. After completing a simulation tick and updating its congestion report, `SimulationEngine` notifies every registered observer:
 
 ```java
-// SimulationEngine (subject)
+public interface SimulationObserver {
+    void onSimulationStep();
+}
+
+// SimulationEngine subject
 private void notifyObservers() {
     for (SimulationObserver observer : observers) {
         observer.onSimulationStep();
     }
 }
 
-// SimulationDisplay (concrete observer)
+// SimulationDisplay concrete observer
 @Override
 public void onSimulationStep() {
     repaint();
 }
 ```
 
+The display reacts by requesting a repaint but does not control the simulation loop. This allows the engine to publish completed updates without depending directly on Swing or a specific display implementation.
+
 ### 1.3. For each pattern, explain why you chose it over an alternative. What trade-off did you make?
 
-**Strategy:** A boolean plus an `if/else` inside `SignalisedIntersection` would
-have been shorter for two modes, but every new timing policy would enlarge the
-intersection class and mix traffic-control policy with intersection mechanics.
-Subclassing the intersection would also make live switching awkward. Strategy
-keeps each policy replaceable and independently testable, and a functional
-interface allows concise lambda implementations. The trade-off is additional
-types and indirection. I accepted that cost because timing policies are genuine
-experimental alternatives rather than cosmetic options.
+**Strategy:** The simplest alternative was to store a mode flag in `SignalisedIntersection` and use an `if/else` statement to choose between fixed and adaptive timing. Although shorter for two policies, this approach would mix signal-control policy with intersection mechanics and require the class to be modified whenever another policy was introduced. Subclassing `SignalisedIntersection` was also considered, but it would make runtime switching difficult and could duplicate common intersection behaviour. Strategy keeps each policy replaceable and independently testable, while the functional interface supports concise lambda implementations. The trade-off is additional abstractions and less immediately visible control flow. This was accepted because timing policies represent meaningful, extensible simulation behaviours.
 
-**State:** An enum and a large `switch` could implement three phases with fewer
-files. State keeps each phase's transition behaviour beside the phase and allows
-future phases, such as pedestrian priority, without extending one central
-conditional. The trade-off is more objects and navigation between small classes.
-That overhead is minor compared with the clearer transition responsibilities.
+**State:** An enum combined with a `switch` inside `TrafficLight.update()` could implement the current three phases using fewer classes. However, the conditional would grow as phase-specific behaviour became more complex. State places each transition rule within the relevant phase and allows new behaviours, such as pedestrian or emergency-priority phases, to be introduced without expanding one central conditional. The trade-off is a larger number of small classes and the creation of a new state object during each transition. In this simulation, that overhead is negligible compared with the clearer separation of phase responsibilities.
 
-**Observer:** The engine could directly call `SimulationDisplay`, but this would
-couple the model to Swing. The display could instead poll the engine, but polling
-could duplicate timing and observe an incomplete update. Observer keeps the
-engine independent of the user interface and permits future observers such as a
-statistics recorder. The trade-off is threading discipline: notification occurs
-on the simulation thread, so the observer requests the thread-safe `repaint()`
-rather than painting directly.
+**Observer:** The engine could hold a direct reference to `SimulationDisplay`, but this would couple simulation logic to Swing and make the engine harder to reuse or test independently. Alternatively, the display could poll the engine using a separate timer, but this would duplicate scheduling and could request data during an incomplete tick. Observer allows the engine to publish completed updates through a small interface and supports additional consumers, such as a statistics recorder, without changing the engine. The trade-off is indirect notification flow and the need for thread awareness. Because notifications originate on the simulation thread, the display performs only the thread-safe `repaint()` request and leaves actual painting to Swing’s Event Dispatch Thread.
 
 ---
-
-## 2. Streams / Lambdas / Parallelism
+## 2. Streams, Lambdas and Parallelism
 
 ### 2.1. List every file in your project that uses lambda expressions or the Streams API.
 
-Production files:
+The following production files use lambda expressions, stream pipelines, or the Streams API’s `Collector` abstraction:
 
-- `src/trafficsim/Main.java` — lambda passed to `SwingUtilities.invokeLater`.
-- `src/trafficsim/analysis/ApproachSnapshot.java` — filters and maps vehicles
-  belonging to one directional approach.
-- `src/trafficsim/analysis/CongestionAnalyser.java` — sequential/parallel stream
-  selection, mapping, deterministic sorting, and custom collection.
-- `src/trafficsim/analysis/CongestionCollector.java` — custom Streams API
-  `Collector` with supplier, accumulator, combiner, and finisher.
-- `src/trafficsim/analysis/CongestionReport.java` — stream-based lookup of the
-  busiest road and approach.
-- `src/trafficsim/analysis/NetworkSnapshot.java` — nested stream pipelines that
-  capture roads, approaches, and vehicles.
-- `src/trafficsim/analysis/RoadSnapshot.java` — flattens lane vehicles into an
-  immutable road snapshot.
-- `src/trafficsim/engine/SimulationEngine.java` — simulation-thread lambda and a
-  stream pipeline for changing every signalised intersection's strategy.
-- `src/trafficsim/engine/Statistics.java` — stream-based average and stopped
-  percentage calculations retained from the original simulation.
-- `src/trafficsim/engine/VehicleSpawner.java` — lambda-based vehicle factories
-  and a removal predicate.
-- `src/trafficsim/factory/NetworkLoader.java` — stream-based parsing and network
-  validation.
-- `src/trafficsim/model/road/SignalisedIntersection.java` — nested streams count
-  queued vehicles on a selected axis.
-- `src/trafficsim/strategy/SignalTimingStrategies.java` — timing strategies
-  implemented as lambdas.
-- `src/trafficsim/view/SimulationDisplay.java` — event-handler and formatting
-  lambdas.
+- `src/trafficsim/Main.java` — uses a lambda with `SwingUtilities.invokeLater` to create the interface on Swing’s Event Dispatch Thread.
+- `src/trafficsim/analysis/ApproachSnapshot.java` — filters and maps vehicles located within a directional intersection approach.
+- `src/trafficsim/analysis/CongestionAnalyser.java` — selects sequential or parallel streams, maps snapshots to congestion results, sorts them deterministically, and applies the custom collector.
+- `src/trafficsim/analysis/CongestionCollector.java` — implements a custom `Collector` using a supplier, accumulator, combiner, and finisher.
+- `src/trafficsim/analysis/CongestionReport.java` — uses streams to retrieve the busiest road and directional approach.
+- `src/trafficsim/analysis/NetworkSnapshot.java` — uses nested pipelines to capture immutable road, approach, and vehicle data.
+- `src/trafficsim/analysis/RoadSnapshot.java` — flattens the vehicles from multiple lanes into one immutable road snapshot.
+- `src/trafficsim/engine/SimulationEngine.java` — uses a lambda for the simulation thread and a stream pipeline to apply a selected timing strategy to every signalised intersection.
+- `src/trafficsim/engine/Statistics.java` — calculates average speed and stopped-vehicle percentages using streams.
+- `src/trafficsim/engine/VehicleSpawner.java` — uses lambdas as vehicle factories and as a predicate for removing vehicles outside the network.
+- `src/trafficsim/factory/NetworkLoader.java` — uses streams for direction parsing and network validation.
+- `src/trafficsim/model/road/SignalisedIntersection.java` — uses nested streams to count queued vehicles travelling on a selected road axis.
+- `src/trafficsim/strategy/SignalTimingStrategies.java` — implements fixed-time and adaptive timing strategies as lambda expressions.
+- `src/trafficsim/view/SimulationDisplay.java` — uses lambdas for event handling and congestion-information formatting.
 
-Test files also using streams or lambdas:
+Streams and lambdas also appear in the following test files:
 
-- `test/trafficsim/analysis/CongestionAnalyserTest.java`
-- `test/trafficsim/analysis/CongestionCollectorTest.java`
-- `test/trafficsim/engine/SimulationEngineCongestionTest.java`
-- `test/trafficsim/view/SimulationDisplaySignalTimingTest.java`
+- `test/trafficsim/analysis/CongestionAnalyserTest.java` — compares sequential and parallel analysis results.
+- `test/trafficsim/analysis/CongestionCollectorTest.java` — verifies sequential and parallel collection produce equivalent statistics.
+- `test/trafficsim/engine/SimulationEngineCongestionTest.java` — uses an observer lambda to verify report publication.
+- `test/trafficsim/view/SimulationDisplaySignalTimingTest.java` — uses a stream to locate and verify the timing-control component.
 
-The `->` symbols in enum `switch` expressions are switch syntax, not lambda
-expressions, so I have not counted files that contain only those expressions.
-
+The arrow syntax used in enum `switch` expressions is not a lambda expression. Files containing only switch-expression arrows have therefore not been included.
 ### 2.2. For the most sophisticated use, paste the code and explain: what does it do, and why was a stream/lambda better than a loop?
 
-The most sophisticated use combines immutable snapshots, switchable parallel
-pipelines, and a custom collector. `CongestionAnalyser` maps every road and
-approach to a congestion result, orders the results deterministically, and
-reduces all vehicle snapshots to network statistics:
+The most sophisticated use is the congestion-analysis pipeline, which combines immutable snapshots, optional parallel processing, deterministic sorting, and a custom collector. `CongestionAnalyser` converts each road snapshot into a congestion result and then aggregates all vehicle snapshots into network-wide statistics:
 
 ```java
 Stream<RoadSnapshot> roadStream = parallel
@@ -202,71 +175,55 @@ Stream<VehicleSnapshot> vehicleStream = snapshot.vehicles();
 if (parallel) {
     vehicleStream = vehicleStream.parallel();
 }
+
 TrafficStatistics networkStatistics = vehicleStream
         .collect(CongestionCollector.toTrafficStatistics());
 ```
 
-The collector defines the complete reduction contract:
+`CongestionCollector` defines how each vehicle contributes to the result and how independently calculated partial results are combined:
 
 ```java
-@Override
-public Supplier<Accumulator> supplier() {
-    return Accumulator::new;
+private void add(VehicleSnapshot vehicle) {
+    vehicleCount++;
+    totalSpeed += vehicle.speed();
+
+    if (vehicle.speed() <= SimConstants.QUEUED_SPEED_THRESHOLD) {
+        queuedVehicleCount++;
+    }
 }
 
-@Override
-public BiConsumer<Accumulator, VehicleSnapshot> accumulator() {
-    return Accumulator::add;
+private Accumulator combine(Accumulator other) {
+    vehicleCount += other.vehicleCount;
+    queuedVehicleCount += other.queuedVehicleCount;
+    totalSpeed += other.totalSpeed;
+    return this;
 }
 
-@Override
-public BinaryOperator<Accumulator> combiner() {
-    return Accumulator::combine;
-}
+private TrafficStatistics finish() {
+    double averageSpeed = vehicleCount == 0
+            ? 0.0
+            : totalSpeed / vehicleCount;
 
-@Override
-public Function<Accumulator, TrafficStatistics> finisher() {
-    return Accumulator::finish;
+    return new TrafficStatistics(
+            vehicleCount,
+            queuedVehicleCount,
+            averageSpeed);
 }
 ```
 
-An ordinary loop could calculate these figures, but the stream design expresses
-the operation as a reusable transformation: map independent snapshot objects,
-sort them, then collect the results. The custom collector calculates vehicle
-count, queued count, and total speed in one traversal and explicitly defines how
-partial results combine. This is clearer than maintaining several loosely
-related counters across several loops, and the same analysis can be executed
-sequentially or in parallel without duplicating the algorithm. The trade-off is
-that a custom collector is less immediately familiar than a simple loop, so it
-is worthwhile here because it supports several related statistics and both
-execution modes.
+The pipeline calculates congestion for independent roads, orders the results from busiest to least busy, and produces vehicle count, queued count, and average speed in one reduction. A conventional loop could calculate the same values, particularly for a small network. However, the stream-based design expresses the work as a reusable sequence of transformations and allows the same analysis algorithm to run sequentially or in parallel. The collector also keeps the related aggregation rules together and explicitly defines how partial results must be merged.
+
+The trade-off is that a custom collector is more complex than a basic loop. It is justified here because the analysis calculates several related statistics, operates on immutable data, and supports both sequential and parallel execution without duplicating the algorithm.
 
 ### 2.3. Did you use parallel streams, custom collectors, or the Fork/Join framework? If yes, how did you ensure thread safety? If no, where could parallelism be introduced?
 
-I used both **parallel streams** and a **custom collector**. The public
-`analyseParallel()` method selects `parallelStream()` for roads and approaches
-and calls `parallel()` for the flattened vehicle stream. Tests compare sequential
-and parallel reports to ensure they produce the same ordered result.
+I implemented both **parallel streams** and a **custom collector**. `CongestionAnalyser.analyseParallel()` uses `parallelStream()` for road and approach analysis and converts the flattened vehicle stream to parallel execution. I did not use the Fork/Join framework directly; parallel-stream task scheduling is managed internally by Java’s common Fork/Join pool. Regression tests compare sequential and parallel reports to verify that both execution modes produce equivalent statistics and ordering.
 
-Thread safety is based on snapshot isolation rather than locking inside stream
-operations. `SimulationEngine` captures a `NetworkSnapshot` while holding the
-network lock, then releases the lock before analysis. `RoadSnapshot`,
-`ApproachSnapshot`, and `VehicleSnapshot` are immutable records, and their lists
-are defensively copied with `List.copyOf`. Parallel workers therefore never read
-or modify live `Vehicle` or `Lane` objects.
+Thread safety is achieved through snapshot isolation. `SimulationEngine` captures a complete `NetworkSnapshot` while holding the network lock and releases the lock before beginning analysis. `NetworkSnapshot`, `RoadSnapshot`, `ApproachSnapshot`, and `VehicleSnapshot` are immutable records, while their collections are defensively copied using `List.copyOf`. Parallel workers therefore process stable values rather than reading or modifying live `Vehicle`, `Lane`, or `RoadNetwork` objects.
 
-`CongestionCollector` is not declared `CONCURRENT`. Each stream partition
-receives its own `Accumulator`; the combiner merges completed partial
-accumulators. There is no accumulator shared by multiple workers. The final
-lists are sorted with deterministic tie-breakers, so their order is stable even
-when processing order differs.
+`CongestionCollector` is intentionally not marked `CONCURRENT`. Each stream partition receives an independent `Accumulator`, and the combiner merges partial results only after partition-level accumulation. Consequently, no mutable accumulator is shared between worker threads. Deterministic comparators, including coordinate and direction tie-breakers, ensure stable result ordering even when elements are processed in a different order.
 
-The normal live simulation currently uses sequential analysis because the
-network is small and parallel overhead may exceed the benefit. Parallel analysis
-is available and tested for larger snapshots. Separately, the application has a
-background simulation thread and Swing's Event Dispatch Thread. `volatile`
-fields publish control/report state, and the network lock prevents rendering or
-snapshot capture from observing a half-completed tick.
+The live simulation uses sequential analysis by default because its network is relatively small and parallel-processing overhead may exceed any performance benefit. Parallel analysis remains available and tested for larger snapshots. The application also coordinates a background simulation thread with Swing’s Event Dispatch Thread: `volatile` fields publish control and report state, while synchronization on the network prevents rendering or snapshot capture from observing a partially completed simulation tick.
 
 ---
 
