@@ -128,6 +128,7 @@ The display reacts by requesting a repaint but does not control the simulation l
 **Observer:** The engine could hold a direct reference to `SimulationDisplay`, but this would couple simulation logic to Swing and make the engine harder to reuse or test independently. Alternatively, the display could poll the engine using a separate timer, but this would duplicate scheduling and could request data during an incomplete tick. Observer allows the engine to publish completed updates through a small interface and supports additional consumers, such as a statistics recorder, without changing the engine. The trade-off is indirect notification flow and the need for thread awareness. Because notifications originate on the simulation thread, the display performs only the thread-safe `repaint()` request and leaves actual painting to Swing’s Event Dispatch Thread.
 
 ---
+
 ## 2. Streams, Lambdas and Parallelism
 
 ### 2.1. List every file in your project that uses lambda expressions or the Streams API.
@@ -157,6 +158,7 @@ Streams and lambdas also appear in the following test files:
 - `test/trafficsim/view/SimulationDisplaySignalTimingTest.java` — uses a stream to locate and verify the timing-control component.
 
 The arrow syntax used in enum `switch` expressions is not a lambda expression. Files containing only switch-expression arrows have therefore not been included.
+
 ### 2.2. For the most sophisticated use, paste the code and explain: what does it do, and why was a stream/lambda better than a loop?
 
 The most sophisticated use is the congestion-analysis pipeline, which combines immutable snapshots, optional parallel processing, deterministic sorting, and a custom collector. `CongestionAnalyser` converts each road snapshot into a congestion result and then aggregates all vehicle snapshots into network-wide statistics:
@@ -231,44 +233,32 @@ The live simulation uses sequential analysis by default because its network is r
 
 ### 3.1. What did you add to your simulation that went beyond the in-class activities? Describe the feature and what inspired it.
 
-I added a live, directional congestion-analysis system inspired by the coloured
-traffic layer in Google Maps. It does not simply colour an entire road because a
-traffic light happens to be red. At the end of each tick, the engine captures an
-immutable view of every road and of the 120-unit lane segment approaching each
-intersection. The analyser counts queued vehicles, calculates congestion scores,
-and classifies each approach as low, moderate, or high congestion. The display
-then colours only the affected approach green, amber, or red while leaving the
-ordinary road surface dark. A dashboard reports average speed, the queued
-percentage, and the current busiest approach.
+My principal extension was a live, directional congestion-analysis system inspired by the coloured traffic layer used in Google Maps. Rather than colouring an entire road whenever vehicles stop at a traffic light, the system independently analyses the 120-unit lane segment approaching each intersection. At the end of every simulation tick, the engine captures an immutable network snapshot. The analyser then counts queued vehicles, calculates congestion scores, and classifies each directional approach as low, moderate, or high congestion. Only the affected approach is rendered green, amber, or red, while unmeasured road sections retain their normal dark colour. The dashboard supplements the heatmap with average speed, queued-vehicle percentage, and the current busiest approach.
 
-I also made signal timing switchable between fixed-time and adaptive
-queue-pressure strategies. The mode is visible on screen and can be changed
-during a run with the `T` key or the timing button. This turns the simulation
-into an experiment rather than a fixed animation, while the run seed makes the
-traffic sequence reproducible.
+A related extension is the switchable signal-control system. Traffic lights can use either fixed-time timing or an adaptive queue-pressure strategy, and the active mode is displayed within the interface. Users can change the policy during a running simulation using the `T` key or the timing-control button. Combined with a reproducible run seed, this allows the program to operate as a controlled traffic experiment rather than only as a visual animation. The feature was inspired by real actuated traffic signals, which modify their timing in response to measured demand.
 
-The thresholds were calibrated against observed simulation behaviour instead of
-chosen only to make the display colourful. In a 3,410-tick run using seed
-`0x19BA0744D40DDE4E`, the largest approach queue was zero for 13 ticks, one for
-843 ticks, two for 2,037 ticks, and three for 517 ticks; it never reached four.
-This evidence led to the final meanings: 0–1 queued vehicles is low, 2 is
-moderate, and 3 or more is high.
+The congestion thresholds were calibrated using observed simulation behaviour rather than selected solely for visual effect. During a 3,410-tick run with seed `0x19BA0744D40DDE4E`, the maximum directional queue was zero for 13 ticks, one for 843 ticks, two for 2,037 ticks, and three for 517 ticks; it never reached four. Based on this distribution, zero or one queued vehicle is classified as low congestion, two as moderate, and three or more as high. This produced a heatmap that remains responsive while distinguishing ordinary signal delays from unusually heavy queues.
 
 ### 3.2. Paste a code snippet or describe a design decision that demonstrates emergent behaviour, non-trivial complexity, or a genuinely surprising outcome.
 
-The most important design decision was to separate the mutable simulation from
-analytics:
+A significant design decision was to separate the mutable simulation from its analytical processing. The engine completes all model updates and captures one consistent snapshot while holding the network lock. Congestion analysis then operates on that immutable snapshot after the lock has been released:
 
 ```java
 NetworkSnapshot snapshot;
+
 synchronized (network) {
     tickCount++;
     updateLights();
+
     List<Vehicle> vehicles = collectVehicles();
     Map<Vehicle, SensorReading> readings = readSensors(vehicles);
     moveLaneVehicles(readings);
+
     spawner.despawnOffMap(network);
-    if (vehicles.size() < SimConstants.SPAWN_CAP) spawner.tick(network);
+    if (vehicles.size() < SimConstants.SPAWN_CAP) {
+        spawner.tick(network);
+    }
+
     snapshot = NetworkSnapshot.capture(network, tickCount);
 }
 
@@ -276,38 +266,19 @@ synchronized (network) {
 latestCongestionReport = congestionAnalyser.analyse(snapshot);
 ```
 
-There is no script telling the heatmap when or where to turn red. Vehicle
-spawning, different vehicle behaviour, buses stopping, traffic-light phases,
-collision avoidance, and local queues interact to form congestion. The analyser
-only observes the resulting state. A queue can grow on one side of an
-intersection, produce a red approach, then disperse and return to amber or green.
-This changing spatial pattern is emergent behaviour produced by local rules.
+The congestion displayed by the heatmap is not scripted. Vehicle spawning, differences in vehicle behaviour, bus dwell times, traffic-light phases, collision avoidance, and local queue formation interact to produce changing conditions. The analyser observes the resulting state rather than instructing the display when or where congestion should occur. Consequently, a queue can develop on one directional approach, raise its classification from green to amber or red, and later disperse. These changing spatial patterns emerge from the interaction of independent local rules.
 
-The strategy experiment also revealed a useful limitation: with the current
-default traffic, the adaptive rule triggers rarely because vehicles on the green
-axis usually begin moving and stop counting as queued. A 5,000-tick comparison
-with the same seed produced essentially identical average speed and queued
-percentage for fixed and adaptive modes. I retained the well-tested Strategy
-architecture but do not claim that this simple policy is already an optimal
-controller. Recognising this result is more defensible than forcing a visual
-difference or claiming an unsupported improvement.
+A genuinely surprising outcome occurred during evaluation of the adaptive timing strategy. In a reproducible 5,000-tick comparison using the same seed, both fixed and adaptive modes produced an average speed of approximately `1.8183` and a queued-vehicle rate of approximately `30.92%`. Investigation showed that the adaptive rule rarely activated because vehicles on the green axis normally began moving and therefore no longer satisfied the queued-speed threshold.
 
-### 3.3. If you had another 6 weeks, what would you add or change?
+I retained the Strategy architecture because it correctly supports interchangeable and independently tested policies, but I do not claim that the current adaptive policy improves the default simulation. This result identified a limitation in the demand measurement: a future strategy should consider approaching traffic and predicted arrivals, rather than only vehicles already stopped on the green axis. Reporting this outcome demonstrates evaluation of the system’s actual behaviour rather than assuming that a more complex controller must perform better.
 
-First, I would build a multi-seed, headless experiment runner and measure
-throughput, mean delay, maximum queue, and fairness for both timing strategies.
-I would redesign the adaptive input to measure approaching demand, not only
-vehicles that are already stopped on the green axis, and tune it against those
-experiments.
+### 3.3. If you had another six weeks, what would you add or change?
 
-Second, I would represent the network as a graph. Vehicles could choose
-destinations, turn at intersections, and use interchangeable routing strategies
-such as shortest distance, shortest predicted time, or congestion avoidance.
-That would allow jams to change routes rather than only change colours.
+Inspired by the Week 13 workshop presentations, I would add a speed-enforcement system involving a police vehicle. Individual roads would define speed limits, and a strategically positioned police vehicle would target the first vehicle detected travelling more than 3 km/h above the applicable limit. The police vehicle could use State to represent waiting, pursuing, and returning behaviours, while a Strategy could determine how a target is selected. This would introduce another autonomous agent whose local decisions could produce emergent interactions with traffic signals, congestion, and other vehicles.
 
-Finally, I would benchmark the sequential and parallel analysers on much larger
-generated networks. The current snapshot design makes safe parallelism possible,
-but the small demonstration network is unlikely to benefit from its overhead.
+I would also create a headless experimental framework that runs both signal-timing strategies across multiple identical seeds and records throughput, mean delay, maximum queue length, and directional fairness. The adaptive strategy could then be redesigned to measure approaching demand and predicted arrivals rather than only vehicles already stopped on the green axis.
+
+Finally, I would replace the coordinate-only road model with a graph-based network. Vehicles could choose destinations, turn at intersections, and use routing strategies based on distance, predicted travel time, or congestion. This would support dynamic rerouting and would also allow the proposed police vehicle to pursue a target across multiple connected roads.
 
 ---
 
