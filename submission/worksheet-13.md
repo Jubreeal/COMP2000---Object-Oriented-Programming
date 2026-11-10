@@ -284,17 +284,9 @@ Finally, I would replace the coordinate-only road model with a graph-based netwo
 
 ## 4. Log Book and Final Reflection
 
-### 4.1. Attach or link your log book entries for Weeks 7–13.
+### 4.1. Attach or link your logbook entries for Weeks 7–13.
 
-**[ADD OR LINK THE WEEKS 7–13 LOGBOOK HERE.]**
-
-The Git history provides dated evidence for the Assignment 2 implementation on
-30–31 October 2026, including immutable snapshots, the custom collector,
-congestion reporting, the heatmap, switchable signal strategies, calibration,
-tests, and interface refinement. The final logbook should also include the
-earlier weekly activities that are not recoverable from commits, such as workshop
-learning, planning, group discussions, and feedback review. These should be
-completed from my own notes rather than invented retrospectively.
+My individual logbook for Weeks 7–13 is submitted alongside this worksheet as `logbook_weeks_7-13.pdf`. The dated entries document the activities completed during each workshop, the concepts I learned, how those concepts influenced the traffic simulation, and my reflections on the project’s design and development.
 
 ### 4.2. Reflect on the semester.
 
@@ -320,13 +312,8 @@ I would also agree on interfaces, ownership boundaries, and a shared definition 
 
 **What feedback from the Week 7 submission did you act on?**
 
-The marker's feedback recognised the advanced code used in Assignment 1 and the
-result received a high mark. I responded by keeping the technical ambition but
-making the new work purposeful and explainable. The Strategy pattern solves a
-real runtime-variation problem; streams and the custom collector calculate live
-statistics; immutable snapshots provide a defensible concurrency model; and the
-tests verify sequential/parallel equivalence, strategy decisions, integration,
-and display behaviour. I also documented limitations rather than presenting
-complexity as automatically better.
+The Week 7 feedback praised the project’s diagram, technical complexity, creativity, and advanced features, but identified weaknesses in version-control practice. In response to the comment that commits were inconsistent, messages lacked detail, and branches were not used, I adopted a clearer branch structure for Assignment 2. I preserved the Assignment 1 baseline in `assignment-1-final`, retained an early experiment in `assignment-2-prototype`, and completed the new work in `assignment-2-development`. I also used focused commits with descriptive messages, such as “Add immutable road network snapshots for safe analysis,” “Add thread-safe collector for traffic statistics,” and “Calibrate congestion thresholds and clarify heatmap legend.” This made individual changes easier to identify and protected the stable Assignment 1 version.
 
-**[CHECK THE PARAGRAPH ABOVE AGAINST THE MARKER'S EXACT COMMENT BEFORE SUBMISSION.]**
+I also retained the technical ambition recognised by the marker, but made each advanced feature address a specific problem. Strategy supports runtime variation in signal timing, the custom collector calculates related traffic statistics in one reduction, and immutable snapshots provide a safe boundary for sequential and parallel analysis. Automated tests verify strategy behaviour, snapshot consistency, sequential–parallel equivalence, engine integration, and display output. I also documented alternatives and limitations rather than treating complexity as automatically beneficial.
+
+The marker also noted that my logbook entries were good but did not appear timely. I understood this as feedback about documenting workshop participation and learning soon after each class, rather than about the timing of code commits. In response, I made the Assignment 2 entries explicitly reflect the relevant workshop activities, concepts, and design discussions. For example, my Week 13 reflection records the presentation activity and the idea of introducing a police vehicle that detects and pursues speeding vehicles. This provides clearer evidence of what I gained from the workshops and how those activities influenced my thinking about the project.
