@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-11-11T00:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="assignment2-patterns" name="Pattern Implementation">
+    <mxGraphModel dx="1169" dy="827" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="COMP2000 Assignment 2 - Design Pattern Implementation" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Helvetica;fontSize=24;fontStyle=1;fontColor=#15263C;" vertex="1" parent="1">
+          <mxGeometry x="30" y="18" width="850" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="Traffic simulation | Key participants and runtime interactions | Editable UML view" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Helvetica;fontSize=12;fontColor=#5F6F82;" vertex="1" parent="1">
+          <mxGeometry x="30" y="53" width="760" height="24" as="geometry"/>
+        </mxCell>
+
+        <!-- Strategy panel -->
+        <mxCell id="strategy-panel" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F9FC;strokeColor=#CBD5E1;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="30" y="90" width="1109" height="350" as="geometry"/>
+        </mxCell>
+        <mxCell id="strategy-header" value="1. STRATEGY - Switchable traffic-signal timing (Assignment 2 focus)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563A8;strokeColor=#2563A8;arcSize=8;fontColor=#FFFFFF;fontFamily=Helvetica;fontSize=16;fontStyle=1;align=left;spacingLeft=16;" vertex="1" parent="1">
+          <mxGeometry x="30" y="90" width="1109" height="42" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="engine-strategy" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;Client&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:15px;&quot;&gt;SimulationEngine&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:10px;&quot;&gt;- signalTimingMode&lt;br&gt;+ setSignalTimingMode()&lt;br&gt;+ toggleSignalTimingMode()&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FC;strokeColor=#2563A8;strokeWidth=2;align=left;verticalAlign=top;spacing=9;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="58" y="150" width="185" height="132" as="geometry"/>
+        </mxCell>
+        <mxCell id="timing-mode" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;enum&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:15px;&quot;&gt;SignalTimingMode&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:11px;&quot;&gt;FIXED_TIME&lt;br&gt;ADAPTIVE_QUEUE_PRESSURE&lt;br&gt;+ strategy()&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FC;strokeColor=#2563A8;strokeWidth=2;align=left;verticalAlign=top;spacing=9;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="290" y="150" width="205" height="122" as="geometry"/>
+        </mxCell>
+        <mxCell id="intersection" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;Context&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:15px;&quot;&gt;SignalisedIntersection&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:11px;&quot;&gt;- timingStrategy&lt;br&gt;- extensionsThisPhase&lt;br&gt;- maybeExtendGreen()&lt;br&gt;+ setTimingStrategy()&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FC;strokeColor=#2563A8;strokeWidth=2;align=left;verticalAlign=top;spacing=9;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="550" y="145" width="230" height="132" as="geometry"/>
+        </mxCell>
+        <mxCell id="strategy-interface" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;functional interface&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:15px;&quot;&gt;SignalTimingStrategy&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:11px;&quot;&gt;+ shouldExtendGreen(context)&lt;br&gt;&amp;nbsp;&amp;nbsp;: boolean&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FC;strokeColor=#2563A8;strokeWidth=2;align=left;verticalAlign=top;spacing=9;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="850" y="150" width="255" height="122" as="geometry"/>
+        </mxCell>
+        <mxCell id="strategy-provider" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;strategy provider&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:15px;&quot;&gt;SignalTimingStrategies&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:11px;&quot;&gt;+ fixedTime()&lt;br&gt;+ adaptiveQueuePressure()&lt;br&gt;&amp;nbsp;&amp;nbsp;returns lambda strategies&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FC;strokeColor=#2563A8;strokeWidth=2;align=left;verticalAlign=top;spacing=9;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="270" y="315" width="280" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="timing-context" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;immutable record&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:15px;&quot;&gt;SignalTimingContext&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:11px;&quot;&gt;phase, remainingGreenTicks&lt;br&gt;extensionsThisPhase&lt;br&gt;queuedOnGreenAxis&lt;br&gt;queuedOnRedAxis&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF3FC;strokeColor=#2563A8;strokeWidth=2;align=left;verticalAlign=top;spacing=9;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="720" y="305" width="335" height="115" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="edge-engine-mode" value="selects" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2563A8;strokeWidth=2;endArrow=block;endFill=1;fontColor=#2563A8;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="engine-strategy" target="timing-mode">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge-mode-strategy" value="holds strategy" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2563A8;strokeWidth=2;endArrow=block;endFill=1;fontColor=#2563A8;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=0;entryX=0.5;entryY=0;" edge="1" parent="1" source="timing-mode" target="strategy-interface">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="392" y="140"/><mxPoint x="978" y="140"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-engine-intersection" value="applies selected strategy" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2563A8;strokeWidth=2;endArrow=block;endFill=1;fontColor=#2563A8;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" edge="1" parent="1" source="engine-strategy" target="intersection">
+          <mxGeometry x="-0.45" y="-12" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="151" y="292"/><mxPoint x="665" y="292"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-intersection-strategy" value="delegates" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2563A8;strokeWidth=2;endArrow=block;endFill=1;fontColor=#2563A8;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="intersection" target="strategy-interface">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge-provider-strategy" value="creates lambda strategies" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=6 4;strokeColor=#2563A8;strokeWidth=2;endArrow=open;endFill=0;fontColor=#2563A8;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=0;entryX=0.25;entryY=1;" edge="1" parent="1" source="strategy-provider" target="strategy-interface">
+          <mxGeometry x="-0.20" y="12" relative="1" as="geometry">
+            <Array as="points"><mxPoint x="410" y="295"/><mxPoint x="914" y="295"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edge-intersection-context" value="builds context" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=6 4;strokeColor=#2563A8;strokeWidth=2;endArrow=open;endFill=0;fontColor=#2563A8;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.75;exitY=1;entryX=0.15;entryY=0;" edge="1" parent="1" source="intersection" target="timing-context">
+          <mxGeometry y="-10" relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge-strategy-context" value="reads" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=6 4;strokeColor=#2563A8;strokeWidth=2;endArrow=open;endFill=0;fontColor=#2563A8;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.7;exitY=1;entryX=0.85;entryY=0;" edge="1" parent="1" source="strategy-interface" target="timing-context">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="strategy-note" value="Runtime flow: engine selects mode -&gt; intersection builds context -&gt; strategy decides extension." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontFamily=Helvetica;fontSize=11;fontStyle=1;fontColor=#A86814;" vertex="1" parent="1">
+          <mxGeometry x="58" y="418" width="650" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- State panel -->
+        <mxCell id="state-panel" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F9FC;strokeColor=#CBD5E1;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="30" y="460" width="540" height="320" as="geometry"/>
+        </mxCell>
+        <mxCell id="state-header" value="2. STATE - Traffic-light phase lifecycle" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2D7A5A;strokeColor=#2D7A5A;arcSize=8;fontColor=#FFFFFF;fontFamily=Helvetica;fontSize=16;fontStyle=1;align=left;spacingLeft=16;" vertex="1" parent="1">
+          <mxGeometry x="30" y="460" width="540" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="traffic-light" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;Context&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:15px;&quot;&gt;TrafficLight&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:11px;&quot;&gt;- state: LightState&lt;br&gt;- timer, greenAxis&lt;br&gt;+ update()&lt;br&gt;~ setState(next)&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF7F1;strokeColor=#2D7A5A;strokeWidth=2;align=left;verticalAlign=top;spacing=9;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="55" y="525" width="180" height="115" as="geometry"/>
+        </mxCell>
+        <mxCell id="light-state" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;interface&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:15px;&quot;&gt;LightState&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:11px;&quot;&gt;+ update(light)&lt;br&gt;+ getPhase()&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF7F1;strokeColor=#2D7A5A;strokeWidth=2;align=left;verticalAlign=top;spacing=9;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="365" y="525" width="180" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="green-state" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;concrete state&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:14px;&quot;&gt;GreenState&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:10px;&quot;&gt;GREEN -&gt; YELLOW&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF7F1;strokeColor=#2D7A5A;strokeWidth=2;align=left;verticalAlign=top;spacing=7;fontFamily=Helvetica;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="45" y="680" width="150" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="yellow-state" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;concrete state&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:14px;&quot;&gt;YellowState&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:10px;&quot;&gt;YELLOW -&gt; RED&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF7F1;strokeColor=#2D7A5A;strokeWidth=2;align=left;verticalAlign=top;spacing=7;fontFamily=Helvetica;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="220" y="680" width="150" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="red-state" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;concrete state&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:14px;&quot;&gt;RedState&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:10px;&quot;&gt;swap axis -&gt; GREEN&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF7F1;strokeColor=#2D7A5A;strokeWidth=2;align=left;verticalAlign=top;spacing=7;fontFamily=Helvetica;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="395" y="680" width="150" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge-light-state" value="holds current state" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2D7A5A;strokeWidth=2;endArrow=block;endFill=1;fontColor=#2D7A5A;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="traffic-light" target="light-state"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="edge-green-interface" value="implements" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=6 4;strokeColor=#2D7A5A;strokeWidth=2;endArrow=block;endFill=0;fontColor=#2D7A5A;fontSize=10;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=0;entryX=0.2;entryY=1;" edge="1" parent="1" source="green-state" target="light-state"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="edge-yellow-interface" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=6 4;strokeColor=#2D7A5A;strokeWidth=2;endArrow=block;endFill=0;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="yellow-state" target="light-state"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="edge-red-interface" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=6 4;strokeColor=#2D7A5A;strokeWidth=2;endArrow=block;endFill=0;exitX=0.5;exitY=0;entryX=0.8;entryY=1;" edge="1" parent="1" source="red-state" target="light-state"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="edge-green-yellow" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2D7A5A;strokeWidth=2;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="green-state" target="yellow-state"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="edge-yellow-red" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2D7A5A;strokeWidth=2;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="yellow-state" target="red-state"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="edge-red-green" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2D7A5A;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" edge="1" parent="1" source="red-state" target="green-state">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="470" y="765"/><mxPoint x="120" y="765"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="state-note" value="TrafficLight delegates update(); each state owns its transition rule." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#A86814;" vertex="1" parent="1">
+          <mxGeometry x="45" y="504" width="500" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- Observer panel -->
+        <mxCell id="observer-panel" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7F9FC;strokeColor=#CBD5E1;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="590" y="460" width="549" height="320" as="geometry"/>
+        </mxCell>
+        <mxCell id="observer-header" value="3. OBSERVER - Simulation-to-display updates" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7253A6;strokeColor=#7253A6;arcSize=8;fontColor=#FFFFFF;fontFamily=Helvetica;fontSize=16;fontStyle=1;align=left;spacingLeft=16;" vertex="1" parent="1">
+          <mxGeometry x="590" y="460" width="549" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="engine-observer" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;Subject&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:15px;&quot;&gt;SimulationEngine&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:11px;&quot;&gt;- observers&lt;br&gt;+ addObserver()&lt;br&gt;- notifyObservers()&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2EDFA;strokeColor=#7253A6;strokeWidth=2;align=left;verticalAlign=top;spacing=9;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="530" width="200" height="112" as="geometry"/>
+        </mxCell>
+        <mxCell id="observer-interface" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;interface&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:15px;&quot;&gt;SimulationObserver&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:11px;&quot;&gt;+ onSimulationStep()&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2EDFA;strokeColor=#7253A6;strokeWidth=2;align=left;verticalAlign=top;spacing=9;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="900" y="530" width="205" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="simulation-display" value="&lt;div style=&quot;text-align:center;color:#5F6F82;&quot;&gt;&lt;i&gt;&amp;lt;&amp;lt;concrete observer&amp;gt;&amp;gt;&lt;/i&gt;&lt;br&gt;&lt;b style=&quot;color:#15263C;font-size:15px;&quot;&gt;SimulationDisplay&lt;/b&gt;&lt;/div&gt;&lt;hr&gt;&lt;div style=&quot;font-family:monospace;font-size:11px;&quot;&gt;+ onSimulationStep()&lt;br&gt;&amp;nbsp;&amp;nbsp;calls repaint()&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2EDFA;strokeColor=#7253A6;strokeWidth=2;align=left;verticalAlign=top;spacing=9;fontFamily=Helvetica;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="900" y="670" width="205" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="edge-engine-observer" value="notifies" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#7253A6;strokeWidth=2;endArrow=block;endFill=1;fontColor=#7253A6;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="engine-observer" target="observer-interface"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="edge-display-observer" value="implements" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;dashPattern=6 4;strokeColor=#7253A6;strokeWidth=2;endArrow=block;endFill=0;fontColor=#7253A6;fontSize=11;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" edge="1" parent="1" source="simulation-display" target="observer-interface"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="observer-note" value="The engine publishes completed updates without depending on Swing.&lt;br&gt;&lt;span style=&quot;color:#5F6F82;font-weight:normal;&quot;&gt;SimulationDisplay requests repaint(); Swing performs painting on the EDT.&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontFamily=Helvetica;fontSize=10;fontStyle=1;fontColor=#A86814;" vertex="1" parent="1">
+          <mxGeometry x="620" y="650" width="250" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="footer-line" value="" style="shape=line;strokeColor=#8796A8;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="798" width="1109" height="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="footer" value="Solid arrow: runtime association / call      |      Dashed arrow: dependency / realization" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;fontFamily=Helvetica;fontSize=10;fontColor=#5F6F82;" vertex="1" parent="1">
+          <mxGeometry x="30" y="801" width="700" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="footer-source" value="Based on the final assignment-2-development implementation" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;whiteSpace=wrap;fontFamily=Helvetica;fontSize=10;fontColor=#5F6F82;" vertex="1" parent="1">
+          <mxGeometry x="760" y="801" width="379" height="20" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
