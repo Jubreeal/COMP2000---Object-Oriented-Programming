@@ -2,6 +2,8 @@
 
 **Student name:** Jubril Olaboopo
 
+**Student Number** 47161965
+
 **GitHub repo URL:** [https://github.com/Jubreeal/COMP2000---Object-Oriented-Programming](https://github.com/Jubreeal/COMP2000---Object-Oriented-Programming/tree/assignment-2-development)
 
 ---
